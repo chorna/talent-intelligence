@@ -1,7 +1,10 @@
 # Python
 __pycache__/
 *.py[cod]
+*.sqlite3
 *.egg-info/
+
+# Virtualenv
 .venv/
 venv/
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+
 set -e
 
 echo "⏳ Waiting for PostgreSQL..."
@@ -11,5 +12,9 @@ done
 echo "✅ PostgreSQL is ready"
 
 python manage.py migrate
+
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
 
 exec python manage.py runserver 0.0.0.0:8000

@@ -9,10 +9,10 @@ RUN apt-get update && \
     apt-get install -y gcc libpq-dev postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt .
+COPY backend/requirements ./requirements
 
 RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+    && pip install -r requirements/development.txt
 
 COPY docker/django/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
