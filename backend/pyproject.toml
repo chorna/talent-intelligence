@@ -15,10 +15,18 @@ select = [
     "UP",
 ]
 
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings.testing"
+DJANGO_SETTINGS_MODULE = "config.settings.staging"
+pythonpath = [
+    "backend"
+]
 python_files = [
     "tests.py",
     "test_*.py",
-    "*_tests.py",
+    "*_tests.py"
 ]
