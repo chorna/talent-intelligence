@@ -15,13 +15,17 @@ select = [
     "UP",
 ]
 
+ignore = [
+    "F403",
+    "F405",
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 
-
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings.staging"
+DJANGO_SETTINGS_MODULE = "config.settings.testing"
 pythonpath = [
     "backend"
 ]
