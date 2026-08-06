@@ -1,0 +1,46 @@
+services:
+
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: talent_db
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+
+    container_name: talent_backend
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./backend:/app
+
+    working_dir: /app
+
+    command: python manage.py runserver 0.0.0.0:8000
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
