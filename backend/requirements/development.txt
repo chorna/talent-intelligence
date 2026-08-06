@@ -1,8 +1,4 @@
--r base.txt
+-r testing.txt
 
 ruff
-pytest
-pytest-django
-pytest-cov
 pre-commit
-ipython
