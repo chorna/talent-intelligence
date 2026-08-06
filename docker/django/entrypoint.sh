@@ -1,18 +1,14 @@
 #!/bin/sh
-
 set -e
 
-echo "Esperando PostgreSQL..."
+echo "⏳ Waiting for PostgreSQL..."
 
-until pg_isready \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER"
+until pg_isready -h db -p 5432 -U talent
 do
     sleep 1
 done
 
-echo "PostgreSQL listo"
+echo "✅ PostgreSQL is ready"
 
 python manage.py migrate
 
