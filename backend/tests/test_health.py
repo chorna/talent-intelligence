@@ -2,5 +2,13 @@ from django.test import TestCase
 
 
 class HealthTest(TestCase):
-    def test_django_is_alive(self):
-        self.assertTrue(True)
+    def test_health(self):
+        response = self.client.get("/health/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ok",
+            },
+        )
