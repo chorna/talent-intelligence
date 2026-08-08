@@ -37,7 +37,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-BASE_APPS = [
+DJANGO_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -46,15 +46,16 @@ BASE_APPS = [
     "django.contrib.staticfiles",
 ]
 
-THIRD_APPS = [
+THIRD_PARTY_APPS = [
     "rest_framework",
+    "drf_spectacular",
 ]
 
 LOCAL_APPS = [
     "apps.core",
 ]
 
-INSTALLED_APPS = BASE_APPS + THIRD_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -138,5 +139,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGGING_CONFIG = None
 
-
 logging.config.dictConfig(LOGGING)
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Talent Intelligence API",
+    "DESCRIPTION": "Backend API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
