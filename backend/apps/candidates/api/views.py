@@ -1,4 +1,3 @@
-from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ModelViewSet
 
 from apps.candidates.models import Candidate
@@ -13,4 +12,3 @@ class CandidateViewSet(ModelViewSet):
         "educations",
     )
     serializer_class = CandidateSerializer
-    permission_classes = [AllowAny]

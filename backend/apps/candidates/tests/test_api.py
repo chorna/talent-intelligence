@@ -7,11 +7,19 @@ from apps.candidates.models import Candidate
 from apps.education.models import Education
 from apps.experiences.models import Experience
 from apps.skills.models import Skill
+from apps.users.models import User
 
 
 class CandidateViewSetTests(APITestCase):
     def setUp(self):
         self.url = "/api/candidates/"
+
+        self.user = User.objects.create_user(
+            email="test@example.com",
+            password="testpassword123",
+        )
+
+        self.client.force_authenticate(user=self.user)
 
         self.candidate = Candidate.objects.create(
             first_name="Christian",
