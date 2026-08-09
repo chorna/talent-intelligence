@@ -89,7 +89,7 @@ Find candidates similar to this profile
 
 - [x] Project setup
 - [x] Django backend
-- [ ] Authentication
+- [x] Authentication
 - [x] PostgreSQL
 - [x] Django REST Framework
 - [x] Swagger / OpenAPI
@@ -99,10 +99,10 @@ Find candidates similar to this profile
 - [x] Skills management
 - [x] Experience management
 - [x] Education management
+- [x] Candidate Search
+- [ ] Dashboard
 - [ ] AI Skill Extractor
 - [ ] Embeddings
-- [ ] Candidate Search
-- [ ] Dashboard
 - [ ] Recruiter Chat
 - [ ] CV Import
 - [ ] GitHub Import
