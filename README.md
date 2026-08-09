@@ -449,8 +449,8 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ### Recruiter Workflow
 
-* [ ] Candidate favorites
-* [ ] Candidate notes
+* [x] Candidate favorites
+* [x] Candidate notes
 * [ ] Candidate status / pipeline
 * [ ] Recruiter workflow
 * [ ] Recruiter dashboard

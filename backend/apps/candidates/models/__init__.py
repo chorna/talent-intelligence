@@ -1,1 +1,9 @@
-from .candidate import Candidate as Candidate
+from .candidate import Candidate
+from .favorite import CandidateFavorite
+from .note import CandidateNote
+
+__all__ = [
+    "Candidate",
+    "CandidateFavorite",
+    "CandidateNote",
+]

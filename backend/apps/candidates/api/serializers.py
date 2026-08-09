@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.candidates.models import Candidate
+from apps.candidates.models import Candidate, CandidateFavorite, CandidateNote
 from apps.education.api.serializers import EducationSerializer
 from apps.experiences.api.serializers import ExperienceSerializer
 from apps.locations.models import City
@@ -37,6 +37,7 @@ class CandidateSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
+    is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = Candidate
@@ -55,6 +56,7 @@ class CandidateSerializer(serializers.ModelSerializer):
             "skill_ids",
             "experiences",
             "educations",
+            "is_favorite",
             "created_at",
             "updated_at",
         ]
@@ -69,3 +71,46 @@ class CandidateSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         return value.strip().lower()
+
+    def get_is_favorite(self, obj):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            return False
+
+        return CandidateFavorite.objects.filter(
+            user=request.user,
+            candidate=obj,
+        ).exists()
+
+
+class CandidateFavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateFavorite
+        fields = [
+            "id",
+            "candidate",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+        ]
+
+
+class CandidateNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateNote
+        fields = [
+            "id",
+            "candidate",
+            "content",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "candidate",
+            "created_at",
+            "updated_at",
+        ]

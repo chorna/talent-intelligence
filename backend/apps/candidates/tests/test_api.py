@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.candidates.models import Candidate
+from apps.candidates.models import Candidate, CandidateFavorite
 from apps.education.models import Education
 from apps.experiences.models import Experience
 from apps.locations.models import City, Country
@@ -748,4 +748,162 @@ class CandidateViewSetTests(APITestCase):
         self.assertEqual(
             response.data["count"],
             1,
+        )
+
+    def test_favorite_candidate(self):
+        response = self.client.post(
+            f"{self.url}{self.candidate.id}/favorite/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertTrue(
+            CandidateFavorite.objects.filter(
+                user=self.user,
+                candidate=self.candidate,
+            ).exists()
+        )
+
+    def test_favorite_candidate_twice_does_not_duplicate(self):
+        self.client.post(
+            f"{self.url}{self.candidate.id}/favorite/",
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.candidate.id}/favorite/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            CandidateFavorite.objects.filter(
+                user=self.user,
+                candidate=self.candidate,
+            ).count(),
+            1,
+        )
+
+    def test_remove_favorite(self):
+        CandidateFavorite.objects.create(
+            user=self.user,
+            candidate=self.candidate,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.candidate.id}/favorite/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            CandidateFavorite.objects.filter(
+                user=self.user,
+                candidate=self.candidate,
+            ).exists()
+        )
+
+    def test_list_favorite_candidates(self):
+        CandidateFavorite.objects.create(
+            user=self.user,
+            candidate=self.candidate,
+        )
+
+        CandidateFavorite.objects.create(
+            user=self.user,
+            candidate=self.candidate_chiclayo,
+        )
+
+        response = self.client.get(
+            f"{self.url}favorites/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            2,
+        )
+
+    def test_remove_nonexistent_favorite(self):
+        response = self.client.delete(
+            f"{self.url}{self.candidate.id}/favorite/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+    def test_candidate_returns_is_favorite(self):
+        CandidateFavorite.objects.create(
+            user=self.user,
+            candidate=self.candidate,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.candidate.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertTrue(
+            response.data["is_favorite"],
+        )
+
+    def test_candidate_is_not_favorite(self):
+        response = self.client.get(
+            f"{self.url}{self.candidate.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertFalse(
+            response.data["is_favorite"],
+        )
+
+    def test_favorites_are_private_per_user(self):
+        CandidateFavorite.objects.create(
+            user=self.user,
+            candidate=self.candidate,
+        )
+
+        another_user = User.objects.create_user(
+            email="another@example.com",
+            password="testpassword123",
+        )
+
+        self.client.force_authenticate(
+            user=another_user,
+        )
+
+        response = self.client.get(
+            f"{self.url}favorites/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            0,
         )
