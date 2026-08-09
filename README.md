@@ -87,10 +87,18 @@ Find candidates similar to this profile
 
 ## Roadmap
 
-- [ ] Project setup
-- [ ] Django backend
+- [x] Project setup
+- [x] Django backend
 - [ ] Authentication
-- [ ] PostgreSQL
+- [x] PostgreSQL
+- [x] Django REST Framework
+- [x] Swagger / OpenAPI
+- [x] Core app
+- [x] Health endpoint
+- [x] Candidate management
+- [x] Skills management
+- [x] Experience management
+- [ ] Education management
 - [ ] AI Skill Extractor
 - [ ] Embeddings
 - [ ] Candidate Search
