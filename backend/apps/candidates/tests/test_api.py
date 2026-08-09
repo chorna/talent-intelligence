@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.candidates.models import Candidate
+from apps.education.models import Education
+from apps.experiences.models import Experience
 from apps.skills.models import Skill
 
 
@@ -29,6 +31,35 @@ class CandidateViewSetTests(APITestCase):
         self.django = Skill.objects.create(
             name="Django",
             slug="django",
+        )
+
+        self.candidate.skills.add(
+            self.python,
+            self.django,
+        )
+
+        self.experience = Experience.objects.create(
+            candidate=self.candidate,
+            company_name="Tech Company",
+            job_title="Senior Backend Engineer",
+            description="Developed APIs with Django.",
+            location="Lima",
+            employment_type="full_time",
+            work_mode="hybrid",
+            start_date="2024-01-01",
+            end_date="2025-01-01",
+            is_current=False,
+        )
+
+        self.education = Education.objects.create(
+            candidate=self.candidate,
+            institution="Universidad de Lima",
+            degree="bachelor",
+            field_of_study="Computer Science",
+            location="Lima",
+            start_date="2018-01-01",
+            end_date="2023-12-31",
+            is_current=False,
         )
 
     def test_list_candidates(self):
@@ -158,7 +189,7 @@ class CandidateViewSetTests(APITestCase):
             "first_name": "Another",
             "last_name": "Candidate",
             "email": "another@example.com",
-            "skills": [
+            "skill_ids": [
                 str(self.python.id),
                 str(self.django.id),
             ],
@@ -212,7 +243,7 @@ class CandidateViewSetTests(APITestCase):
             status.HTTP_200_OK,
         )
 
-        skill_ids = {str(skill_id) for skill_id in response.data["skills"]}
+        skill_ids = {skill["id"] for skill in response.data["skills"]}
 
         self.assertEqual(
             skill_ids,
@@ -231,7 +262,7 @@ class CandidateViewSetTests(APITestCase):
                 kwargs={"pk": self.candidate.id},
             ),
             {
-                "skills": [str(self.django.id)],
+                "skill_ids": [str(self.django.id)],
             },
             format="json",
         )
@@ -246,4 +277,88 @@ class CandidateViewSetTests(APITestCase):
         self.assertEqual(
             list(self.candidate.skills.all()),
             [self.django],
+        )
+
+    def test_retrieve_candidate_returns_skills(self):
+        self.candidate.skills.add(self.python, self.django)
+
+        response = self.client.get(
+            reverse(
+                "candidate-detail",
+                kwargs={"pk": self.candidate.id},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(len(response.data["skills"]), 2)
+
+        skill_names = {skill["name"] for skill in response.data["skills"]}
+
+        self.assertEqual(
+            skill_names,
+            {"Python", "Django"},
+        )
+
+    def test_retrieve_candidate_returns_experiences(self):
+        response = self.client.get(
+            reverse(
+                "candidate-detail",
+                kwargs={"pk": self.candidate.id},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data["experiences"]),
+            1,
+        )
+
+        experience = response.data["experiences"][0]
+
+        self.assertEqual(
+            experience["company_name"],
+            self.experience.company_name,
+        )
+
+        self.assertEqual(
+            experience["job_title"],
+            self.experience.job_title,
+        )
+
+    def test_retrieve_candidate_returns_educations(self):
+        response = self.client.get(
+            reverse(
+                "candidate-detail",
+                kwargs={"pk": self.candidate.id},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data["educations"]),
+            1,
+        )
+
+        education = response.data["educations"][0]
+
+        self.assertEqual(
+            education["institution"],
+            self.education.institution,
+        )
+
+        self.assertEqual(
+            education["degree"],
+            self.education.degree,
         )

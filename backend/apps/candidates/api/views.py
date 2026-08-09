@@ -7,6 +7,10 @@ from .serializers import CandidateSerializer
 
 
 class CandidateViewSet(ModelViewSet):
-    queryset = Candidate.objects.all()
+    queryset = Candidate.objects.prefetch_related(
+        "skills",
+        "experiences",
+        "educations",
+    )
     serializer_class = CandidateSerializer
     permission_classes = [AllowAny]

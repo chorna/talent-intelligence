@@ -12,6 +12,8 @@ class Candidate(BaseModel):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=30, blank=True)
     location = models.CharField(max_length=150, blank=True)
+    headline = models.CharField(max_length=255, blank=True)
+    summary = models.TextField(blank=True)
     linkedin_url = models.URLField(blank=True)
     github_url = models.URLField(blank=True)
     skills = models.ManyToManyField(
