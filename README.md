@@ -98,7 +98,7 @@ Find candidates similar to this profile
 - [x] Candidate management
 - [x] Skills management
 - [x] Experience management
-- [ ] Education management
+- [x] Education management
 - [ ] AI Skill Extractor
 - [ ] Embeddings
 - [ ] Candidate Search
