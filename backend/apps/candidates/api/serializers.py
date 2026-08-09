@@ -1,9 +1,16 @@
 from rest_framework import serializers
 
 from apps.candidates.models import Candidate
+from apps.skills.models import Skill
 
 
 class CandidateSerializer(serializers.ModelSerializer):
+    skills = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Skill.objects.all(),
+        required=False,
+    )
+
     class Meta:
         model = Candidate
         fields = [
@@ -15,6 +22,7 @@ class CandidateSerializer(serializers.ModelSerializer):
             "location",
             "linkedin_url",
             "github_url",
+            "skills",
             "created_at",
             "updated_at",
         ]

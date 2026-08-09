@@ -1,8 +1,10 @@
 # Create your tests here.
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.candidates.models import Candidate
+from apps.skills.models import Skill
 
 
 class CandidateViewSetTests(APITestCase):
@@ -17,6 +19,16 @@ class CandidateViewSetTests(APITestCase):
             location="Lima, Peru",
             linkedin_url="https://linkedin.com/in/christian",
             github_url="https://github.com/christian",
+        )
+
+        self.python = Skill.objects.create(
+            name="Python",
+            slug="python",
+        )
+
+        self.django = Skill.objects.create(
+            name="Django",
+            slug="django",
         )
 
     def test_list_candidates(self):
@@ -139,4 +151,99 @@ class CandidateViewSetTests(APITestCase):
         self.assertEqual(
             response.data["email"],
             "juan@example.com",
+        )
+
+    def test_create_candidate_with_skills(self):
+        data = {
+            "first_name": "Another",
+            "last_name": "Candidate",
+            "email": "another@example.com",
+            "skills": [
+                str(self.python.id),
+                str(self.django.id),
+            ],
+        }
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        candidate = Candidate.objects.get(
+            id=response.data["id"],
+        )
+
+        self.assertEqual(
+            candidate.skills.count(),
+            2,
+        )
+
+        self.assertIn(
+            self.python,
+            candidate.skills.all(),
+        )
+
+        self.assertIn(
+            self.django,
+            candidate.skills.all(),
+        )
+
+    def test_retrieve_candidate_with_skills(self):
+        self.candidate.skills.add(
+            self.python,
+            self.django,
+        )
+
+        response = self.client.get(
+            reverse(
+                "candidate-detail",
+                kwargs={"pk": self.candidate.id},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        skill_ids = {str(skill_id) for skill_id in response.data["skills"]}
+
+        self.assertEqual(
+            skill_ids,
+            {
+                str(self.python.id),
+                str(self.django.id),
+            },
+        )
+
+    def test_update_candidate_skills(self):
+        self.candidate.skills.add(self.python)
+
+        response = self.client.patch(
+            reverse(
+                "candidate-detail",
+                kwargs={"pk": self.candidate.id},
+            ),
+            {
+                "skills": [str(self.django.id)],
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.candidate.refresh_from_db()
+
+        self.assertEqual(
+            list(self.candidate.skills.all()),
+            [self.django],
         )
