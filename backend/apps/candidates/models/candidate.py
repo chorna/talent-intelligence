@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.models.base import BaseModel
+from apps.skills.models import Skill
 
 # Create your models here.
 
@@ -13,6 +14,11 @@ class Candidate(BaseModel):
     location = models.CharField(max_length=150, blank=True)
     linkedin_url = models.URLField(blank=True)
     github_url = models.URLField(blank=True)
+    skills = models.ManyToManyField(
+        Skill,
+        related_name="candidates",
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-created_at"]
