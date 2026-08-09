@@ -34,13 +34,14 @@ urlpatterns = [
     path("api/", include("apps.skills.urls")),
     path("api/", include("apps.experiences.urls")),
     path("api/", include("apps.education.urls")),
+    path("api/", include("apps.users.urls")),
     path(
-        "api/auth/login/",
+        "api/auth/token/",
         TokenObtainPairView.as_view(),
         name="token_obtain_pair",
     ),
     path(
-        "api/auth/refresh/",
+        "api/auth/token/refresh/",
         TokenRefreshView.as_view(),
         name="token_refresh",
     ),
