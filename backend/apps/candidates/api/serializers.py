@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.candidates.models import Candidate
 from apps.education.api.serializers import EducationSerializer
 from apps.experiences.api.serializers import ExperienceSerializer
+from apps.locations.models import City
 from apps.skills.api.serializers import SkillSerializer
 from apps.skills.models import Skill
 
@@ -20,7 +21,18 @@ class CandidateSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    experiences = ExperienceSerializer(many=True, read_only=True)
+
+    city = serializers.PrimaryKeyRelatedField(
+        queryset=City.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
+
+    experiences = ExperienceSerializer(
+        many=True,
+        read_only=True,
+    )
+
     educations = EducationSerializer(
         many=True,
         read_only=True,
@@ -34,7 +46,7 @@ class CandidateSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "phone",
-            "location",
+            "city",
             "headline",
             "summary",
             "linkedin_url",

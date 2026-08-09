@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.models.base import BaseModel
+from apps.locations.models import City
 from apps.skills.models import Skill
 
 # Create your models here.
@@ -11,7 +12,13 @@ class Candidate(BaseModel):
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=30, blank=True)
-    location = models.CharField(max_length=150, blank=True)
+    city = models.ForeignKey(
+        City,
+        on_delete=models.PROTECT,
+        related_name="candidates",
+        null=True,
+        blank=True,
+    )
     headline = models.CharField(max_length=255, blank=True)
     summary = models.TextField(blank=True)
     linkedin_url = models.URLField(blank=True)

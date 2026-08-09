@@ -1,0 +1,343 @@
+[
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000001",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Lima",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000002",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Arequipa",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000003",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Trujillo",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000004",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Chiclayo",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000005",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Piura",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000006",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Cusco",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000007",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000001",
+      "name": "Iquitos",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000008",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000002",
+      "name": "Bogota",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000009",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000002",
+      "name": "Medellin",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000010",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000002",
+      "name": "Cali",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000011",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000003",
+      "name": "Santiago",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000012",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000003",
+      "name": "Valparaiso",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000013",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000004",
+      "name": "Buenos Aires",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000014",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000004",
+      "name": "Cordoba",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000015",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000005",
+      "name": "Sao Paulo",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000016",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000005",
+      "name": "Rio de Janeiro",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000017",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000005",
+      "name": "Brasilia",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000018",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000006",
+      "name": "Mexico City",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000019",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000006",
+      "name": "Guadalajara",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000020",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000007",
+      "name": "New York",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000021",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000007",
+      "name": "San Francisco",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000022",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000007",
+      "name": "Los Angeles",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000023",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000008",
+      "name": "Toronto",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000024",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000008",
+      "name": "Vancouver",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000025",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000009",
+      "name": "Madrid",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000026",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000009",
+      "name": "Barcelona",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000010",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000010",
+      "name": "London",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000028",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000011",
+      "name": "Berlin",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000029",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000011",
+      "name": "Munich",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000030",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000012",
+      "name": "Paris",
+      "is_active": true
+    }
+  },
+  {
+    "model": "locations.city",
+    "pk": "20000000-0000-4000-8000-000000000031",
+    "fields": {
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z",
+      "country": "10000000-0000-4000-8000-000000000012",
+      "name": "Lyon",
+      "is_active": true
+    }
+  }
+]
