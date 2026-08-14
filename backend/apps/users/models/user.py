@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
 from apps.core.models.base import BaseModel
+from apps.organizations.models import Organization
 from apps.users.managers import UserManager
 
 
@@ -33,6 +34,13 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         blank=True,
         related_name="talent_users",
         related_query_name="talent_user",
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="users",
+        null=True,
+        blank=True,
     )
 
     objects = UserManager()

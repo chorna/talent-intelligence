@@ -7,24 +7,25 @@ from apps.jobs.models import Application, Job
 class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
-        fields = [
+        fields = (
             "id",
             "title",
             "description",
             "city",
             "employment_type",
             "work_mode",
-            "status",
+            "organization",
             "created_by",
             "created_at",
             "updated_at",
-        ]
-        read_only_fields = [
+        )
+        read_only_fields = (
             "id",
+            "organization",
             "created_by",
             "created_at",
             "updated_at",
-        ]
+        )
 
     def validate(self, attrs):
         work_mode = attrs.get(

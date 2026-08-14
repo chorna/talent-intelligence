@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from apps.core.pagination import DefaultPagination
+from apps.core.permissions import HasOrganization
 from apps.jobs.models import Application, Job
 
 from .serializers import (
@@ -14,7 +15,7 @@ from .serializers import (
 
 class JobViewSet(ModelViewSet):
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasOrganization]
     pagination_class = DefaultPagination
     filter_backends = [OrderingFilter]
 
@@ -28,11 +29,13 @@ class JobViewSet(ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        queryset = Job.objects.select_related(
-            "city",
-            "city__country",
+        queryset = Job.objects.filter(
+            organization_id=self.request.user.organization_id,
+        ).select_related(
+            "organization",
             "created_by",
-        ).all()
+            "city",
+        )
 
         status = self.request.query_params.get("status")
         work_mode = self.request.query_params.get("work_mode")
@@ -70,13 +73,14 @@ class JobViewSet(ModelViewSet):
 
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(description__icontains=search)
+                Q(title__icontains=search) | Q(description__icontains=search),
             )
 
         return queryset.distinct()
 
     def perform_create(self, serializer):
         serializer.save(
+            organization=self.request.user.organization,
             created_by=self.request.user,
         )
 

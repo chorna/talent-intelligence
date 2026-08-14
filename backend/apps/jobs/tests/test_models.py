@@ -13,11 +13,16 @@ from apps.jobs.models import (
     Job,
 )
 from apps.locations.models import City, Country
+from apps.organizations.models import Organization
 from apps.users.models import User
 
 
 class JobModelTests(TestCase):
     def setUp(self):
+        self.organization = Organization.objects.create(
+            name="ACME Technologies",
+        )
+
         self.user = User.objects.create_user(
             email="recruiter@example.com",
             password="testpassword123",
@@ -66,6 +71,7 @@ class JobModelTests(TestCase):
             description="Fully remote position.",
             city=None,
             employment_type=EmploymentType.FULL_TIME,
+            organization=self.organization,
             work_mode=WorkMode.REMOTE,
             created_by=self.user,
         )
@@ -112,6 +118,45 @@ class JobModelTests(TestCase):
 
         with self.assertRaises(ValidationError):
             job.full_clean()
+
+    def test_job_belongs_to_organization(self):
+        job = Job.objects.create(
+            title="Backend Engineer",
+            description="Backend position.",
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        self.assertEqual(
+            job.organization,
+            self.organization,
+        )
+
+    def test_organization_can_have_multiple_jobs(self):
+        Job.objects.create(
+            title="Python Developer",
+            description="Backend position.",
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        Job.objects.create(
+            title="Django Developer",
+            description="Backend position.",
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        self.assertEqual(
+            self.organization.jobs.count(),
+            2,
+        )
 
 
 class ApplicationModelTests(TestCase):

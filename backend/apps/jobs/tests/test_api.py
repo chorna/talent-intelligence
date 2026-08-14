@@ -1,20 +1,49 @@
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.jobs.choices import EmploymentType, JobStatus, WorkMode
 from apps.jobs.models import Job
 from apps.locations.models import City, Country
-from apps.users.models import User
+from apps.organizations.models import Organization
+
+User = get_user_model()
 
 
 class JobViewSetTests(APITestCase):
     def setUp(self):
-        self.url = "/api/jobs/"
+        self.organization = Organization.objects.create(
+            name="ACME Technologies",
+        )
 
-        self.user = User.objects.create_user(
+        self.other_organization = Organization.objects.create(
+            name="Other Company",
+        )
+
+        self.recruiter = User.objects.create_user(
             email="recruiter@example.com",
             password="testpassword123",
+            organization=self.organization,
         )
+
+        self.second_recruiter = User.objects.create_user(
+            email="recruiter2@example.com",
+            password="testpassword123",
+            organization=self.organization,
+        )
+
+        self.other_recruiter = User.objects.create_user(
+            email="other-recruiter@example.com",
+            password="testpassword123",
+            organization=self.other_organization,
+        )
+
+        self.unassigned_user = User.objects.create_user(
+            email="unassigned@example.com",
+            password="testpassword123",
+        )
+
+        self.url = "/api/jobs/"
 
         self.other_user = User.objects.create_user(
             email="other@example.com",
@@ -22,7 +51,7 @@ class JobViewSetTests(APITestCase):
         )
 
         self.client.force_authenticate(
-            user=self.user,
+            user=self.recruiter,
         )
 
         self.peru = Country.objects.create(
@@ -52,7 +81,8 @@ class JobViewSetTests(APITestCase):
             employment_type=EmploymentType.FULL_TIME,
             work_mode=WorkMode.HYBRID,
             status=JobStatus.OPEN,
-            created_by=self.user,
+            organization=self.organization,
+            created_by=self.recruiter,
         )
 
     def test_list_jobs(self):
@@ -110,7 +140,7 @@ class JobViewSetTests(APITestCase):
 
         self.assertEqual(
             job.created_by,
-            self.user,
+            self.recruiter,
         )
 
     def test_create_remote_job_without_city(self):
@@ -193,7 +223,7 @@ class JobViewSetTests(APITestCase):
             employment_type=EmploymentType.FULL_TIME,
             work_mode=WorkMode.HYBRID,
             status=JobStatus.DRAFT,
-            created_by=self.user,
+            created_by=self.recruiter,
         )
 
         response = self.client.get(
@@ -218,7 +248,8 @@ class JobViewSetTests(APITestCase):
             employment_type=EmploymentType.FULL_TIME,
             work_mode=WorkMode.REMOTE,
             status=JobStatus.OPEN,
-            created_by=self.user,
+            created_by=self.recruiter,
+            organization=self.organization,
         )
 
         response = self.client.get(
@@ -317,5 +348,311 @@ class JobViewSetTests(APITestCase):
 
         self.assertEqual(
             job.created_by,
-            self.user,
+            self.recruiter,
+        )
+
+    def test_recruiter_can_create_job(self):
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Senior Python Developer",
+                "description": "Backend developer.",
+                "employment_type": "full_time",
+                "work_mode": "remote",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        job = Job.objects.get(
+            id=response.data["id"],
+        )
+
+        self.assertEqual(
+            job.organization,
+            self.organization,
+        )
+
+        self.assertEqual(
+            job.created_by,
+            self.recruiter,
+        )
+
+    def test_job_organization_is_taken_from_authenticated_user(self):
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Senior Python Developer",
+                "description": "Backend developer.",
+                "employment_type": "full_time",
+                "work_mode": "remote",
+                "organization": str(
+                    self.other_organization.id,
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        job = Job.objects.get(
+            id=response.data["id"],
+        )
+
+        self.assertEqual(
+            job.organization,
+            self.organization,
+        )
+
+    def test_job_created_by_is_taken_from_authenticated_user(self):
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Senior Python Developer",
+                "description": "Backend developer.",
+                "employment_type": "full_time",
+                "work_mode": "remote",
+                "created_by": str(
+                    self.other_recruiter.id,
+                ),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        job = Job.objects.get(
+            id=response.data["id"],
+        )
+
+        self.assertEqual(
+            job.created_by,
+            self.recruiter,
+        )
+
+    def test_recruiter_can_list_organization_jobs(self):
+        self.client.force_authenticate(
+            user=self.second_recruiter,
+        )
+
+        response = self.client.get(
+            self.url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["results"][0]["id"],
+            str(self.job.id),
+        )
+
+    def test_recruiters_from_same_organization_can_see_same_job(self):
+        job = Job.objects.create(
+            title="Senior Django Developer",
+            description="Backend position.",
+            employment_type="full_time",
+            work_mode="remote",
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.second_recruiter,
+        )
+
+        response = self.client.get(
+            self.url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        job_ids = {item["id"] for item in response.data["results"]}
+
+        self.assertIn(
+            str(job.id),
+            job_ids,
+        )
+
+    def test_recruiter_cannot_see_jobs_from_other_organization(self):
+        job = Job.objects.create(
+            title="Secret Backend Position",
+            description="Private position.",
+            employment_type="full_time",
+            work_mode="remote",
+            organization=self.other_organization,
+            created_by=self.other_recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.get(
+            self.url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        job_ids = {item["id"] for item in response.data["results"]}
+
+        self.assertNotIn(
+            str(job.id),
+            job_ids,
+        )
+
+    def test_recruiter_cannot_retrieve_job_from_other_organization(self):
+        job = Job.objects.create(
+            title="Secret Backend Position",
+            description="Private position.",
+            employment_type="full_time",
+            work_mode="remote",
+            organization=self.other_organization,
+            created_by=self.other_recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{job.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_recruiter_cannot_update_job_from_other_organization(self):
+        job = Job.objects.create(
+            title="Original Title",
+            description="Private position.",
+            employment_type="full_time",
+            work_mode="remote",
+            organization=self.other_organization,
+            created_by=self.other_recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.patch(
+            f"{self.url}{job.id}/",
+            {
+                "title": "Hacked Title",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        job.refresh_from_db()
+
+        self.assertEqual(
+            job.title,
+            "Original Title",
+        )
+
+    def test_recruiter_cannot_delete_job_from_other_organization(self):
+        job = Job.objects.create(
+            title="Private Position",
+            description="Private position.",
+            employment_type="full_time",
+            work_mode="remote",
+            organization=self.other_organization,
+            created_by=self.other_recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.recruiter,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{job.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertTrue(
+            Job.objects.filter(
+                id=job.id,
+            ).exists(),
+        )
+
+    def test_user_without_organization_cannot_create_job(self):
+        self.client.force_authenticate(
+            user=self.unassigned_user,
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Backend Developer",
+                "description": "Backend position.",
+                "employment_type": "full_time",
+                "work_mode": "remote",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_user_without_organization_cannot_list_jobs(self):
+        self.client.force_authenticate(
+            user=self.unassigned_user,
+        )
+
+        response = self.client.get(
+            self.url,
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
         )

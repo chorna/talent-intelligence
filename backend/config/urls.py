@@ -37,6 +37,7 @@ urlpatterns = [
     path("api/", include("apps.users.urls")),
     path("api/", include("apps.locations.urls")),
     path("api/", include("apps.jobs.urls")),
+    path("api/", include("apps.organizations.urls")),
     path(
         "api/auth/token/",
         TokenObtainPairView.as_view(),

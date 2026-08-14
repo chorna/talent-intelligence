@@ -6,9 +6,16 @@ from django.db import models
 from apps.core.models.base import BaseModel
 from apps.jobs.choices import EmploymentType, JobStatus, WorkMode
 from apps.locations.models import City
+from apps.organizations.models import Organization
 
 
 class Job(BaseModel):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="jobs",
+        null=True,
+    )
     title = models.CharField(max_length=255)
     description = models.TextField()
     city = models.ForeignKey(
