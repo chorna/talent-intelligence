@@ -393,93 +393,104 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ### Foundation
 
-* [x] Project setup
-* [x] Django backend
-* [x] PostgreSQL
-* [x] Django REST Framework
-* [x] Swagger / OpenAPI
-* [x] Core app
-* [x] Health endpoint
-* [x] Docker / Docker Compose
-* [x] Testing infrastructure
-* [x] Ruff / code quality
+- [x] Project setup
+- [x] Django backend
+- [x] PostgreSQL
+- [x] Django REST Framework
+- [x] Swagger / OpenAPI
+- [x] Core app
+- [x] Health endpoint
+- [x] Docker / Docker Compose
+- [x] Testing infrastructure
+- [x] Ruff / code quality
 
 ### Authentication & Users
 
-* [x] Authentication
-* [x] Custom User model
-* [x] User registration
-* [x] JWT authentication
-* [x] User profile
-* [x] Logout / token revocation
+- [x] Authentication
+- [x] Custom User model
+- [x] User registration
+- [x] JWT authentication
+- [x] User profile
+- [x] Logout / token revocation
 
 ### Candidate Management
 
-* [x] Candidate management
-* [x] Skills management
-* [x] Experience management
-* [x] Education management
-* [x] Candidate ↔ Skills
-* [x] Candidate ↔ Experience
-* [x] Candidate ↔ Education
+- [x] Candidate management
+- [x] Skills management
+- [x] Experience management
+- [x] Education management
+- [x] Candidate ↔ Skills
+- [x] Candidate ↔ Experience
+- [x] Candidate ↔ Education
+- [x] Candidate favorites
+- [x] Candidate notes
 
 ### Locations
 
-* [x] Country management
-* [x] City management
-* [x] Country → City relationship
-* [x] Country / City fixtures
-* [x] Candidate location
-* [x] Location API
+- [x] Country management
+- [x] City management
+- [x] Country → City relationship
+- [x] Country / City fixtures
+- [x] Candidate location
+- [x] Location API
 
 ### Candidate Search
 
-* [x] Candidate search
-* [x] Search by name
-* [x] Search by email
-* [x] Search by headline / summary
-* [x] Filter by skill
-* [x] Filter by multiple skills
-* [x] Multiple skills with AND logic
-* [x] Filter by city
-* [x] Filter by country
-* [x] Combined filters
-* [x] Pagination
-* [x] Ordering
+- [x] Candidate search
+- [x] Search by name
+- [x] Search by email
+- [x] Search by headline / summary
+- [x] Filter by skill
+- [x] Filter by multiple skills
+- [x] Multiple skills with AND logic
+- [x] Filter by city
+- [x] Filter by country
+- [x] Combined filters
+- [x] Pagination
+- [x] Ordering
 
-### Recruiter Workflow
+### Jobs & Recruiter Workflow
 
-* [x] Candidate favorites
-* [x] Candidate notes
-* [ ] Candidate status / pipeline
-* [ ] Recruiter workflow
-* [ ] Recruiter dashboard
+- [x] Job management
+- [x] Job status
+- [x] Employment type
+- [x] Work mode
+- [x] Job location
+- [x] Remote jobs without city
+- [x] Hybrid / on-site jobs with city
+- [ ] Job skills
+- [ ] Job search / filtering
+- [ ] Candidate applications
+- [ ] Application status
+- [ ] Application pipeline
+- [ ] Recruiter workflow
+- [ ] Recruiter dashboard
 
 ### AI & Intelligence
 
-* [ ] AI Skill Extractor
-* [ ] Embeddings
-* [ ] Semantic Candidate Search
-* [ ] Candidate matching
-* [ ] Candidate ranking / scoring
-* [ ] Recruiter Chat
+- [ ] AI Skill Extractor
+- [ ] Embeddings
+- [ ] Semantic Candidate Search
+- [ ] Candidate matching
+- [ ] Candidate ranking / scoring
+- [ ] Recruiter Chat
 
 ### Candidate Import
 
-* [ ] CV Import
-* [ ] GitHub Import
-* [ ] LinkedIn Connector (where permitted by platform policies)
+- [ ] CV Import
+- [ ] GitHub Import
+- [ ] LinkedIn Connector (where permitted by platform policies)
 
 ### Production
 
-* [ ] Database indexes / query optimization
-* [ ] Caching
-* [ ] Rate limiting
-* [ ] Structured logging
-* [ ] Observability
-* [ ] CI/CD
-* [ ] Production deployment
-* [ ] Security hardening
+- [ ] Database indexes / query optimization
+- [ ] Caching
+- [ ] Rate limiting
+- [ ] Structured logging
+- [ ] Observability
+- [ ] CI/CD
+- [ ] Production deployment
+- [ ] Security hardening
 
 ---
 
