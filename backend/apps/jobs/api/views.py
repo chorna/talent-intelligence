@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
@@ -10,7 +11,11 @@ from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
 from apps.jobs.models import Application, Job
 
-from .serializers import ApplicationSerializer, JobSerializer
+from .serializers import (
+    ApplicationSerializer,
+    ApplicationStatusHistorySerializer,
+    JobSerializer,
+)
 
 
 class JobViewSet(ModelViewSet):
@@ -137,23 +142,23 @@ class JobViewSet(ModelViewSet):
     @action(
         detail=True,
         methods=["post"],
-        url_path="applications/status",
+        url_path="applications/(?P<application_id>[^/.]+)/status",
     )
-    def update_application_status(self, request, pk=None):
+    def update_application_status(
+        self,
+        request,
+        pk=None,
+        application_id=None,
+    ):
         job = self.get_object()
 
-        application_id = request.data.get("application")
-        new_status = request.data.get("status")
+        application = get_object_or_404(
+            Application,
+            id=application_id,
+            job=job,
+        )
 
-        if not application_id:
-            return Response(
-                {
-                    "application": [
-                        "This field is required.",
-                    ],
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        new_status = request.data.get("status")
 
         if not new_status:
             return Response(
@@ -166,20 +171,10 @@ class JobViewSet(ModelViewSet):
             )
 
         try:
-            application = Application.objects.get(
-                id=application_id,
-                job=job,
+            application.transition_to(
+                new_status,
+                changed_by=request.user,
             )
-        except Application.DoesNotExist:
-            return Response(
-                {
-                    "detail": "Application not found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        try:
-            application.transition_to(new_status)
         except ValidationError as exc:
             return Response(
                 exc.message_dict,
@@ -189,6 +184,39 @@ class JobViewSet(ModelViewSet):
         serializer = ApplicationSerializer(
             application,
             context={"request": request},
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="applications/(?P<application_id>[^/.]+)/history",
+    )
+    def application_history(
+        self,
+        request,
+        pk=None,
+        application_id=None,
+    ):
+        job = self.get_object()
+
+        application = get_object_or_404(
+            Application,
+            id=application_id,
+            job=job,
+        )
+
+        history = application.status_history.select_related(
+            "changed_by",
+        )
+
+        serializer = ApplicationStatusHistorySerializer(
+            history,
+            many=True,
         )
 
         return Response(

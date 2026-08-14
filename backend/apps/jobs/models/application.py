@@ -1,13 +1,13 @@
-# apps/jobs/models/application.py
-
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 
 from apps.candidates.models import Candidate
 from apps.core.models.base import BaseModel
 from apps.jobs.choices import ApplicationStatus
-
-from .job import Job
+from apps.jobs.models.application_status_history import (
+    ApplicationStatusHistory,
+)
+from apps.jobs.models.job import Job
 
 
 class Application(BaseModel):
@@ -77,7 +77,8 @@ class Application(BaseModel):
             set(),
         )
 
-    def transition_to(self, new_status):
+    @transaction.atomic
+    def transition_to(self, new_status, changed_by):
         if not self.can_transition_to(new_status):
             raise ValidationError(
                 {
@@ -89,6 +90,8 @@ class Application(BaseModel):
                 }
             )
 
+        previous_status = self.status
+
         self.status = new_status
         self.save(
             update_fields=[
@@ -96,3 +99,37 @@ class Application(BaseModel):
                 "updated_at",
             ],
         )
+
+        ApplicationStatusHistory.objects.create(
+            application=self,
+            from_status=previous_status,
+            to_status=new_status,
+            changed_by=changed_by,
+        )
+
+    @classmethod
+    @transaction.atomic
+    def create_with_history(
+        cls,
+        *,
+        candidate,
+        job,
+        changed_by,
+        status=ApplicationStatus.APPLIED,
+        notes="",
+    ):
+        application = cls.objects.create(
+            candidate=candidate,
+            job=job,
+            status=status,
+            notes=notes,
+        )
+
+        ApplicationStatusHistory.objects.create(
+            application=application,
+            from_status=None,
+            to_status=application.status,
+            changed_by=changed_by,
+        )
+
+        return application

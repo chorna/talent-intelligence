@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.jobs.choices import WorkMode
-from apps.jobs.models import Application, Job
+from apps.jobs.models import Application, ApplicationStatusHistory, Job
 
 
 class JobSerializer(serializers.ModelSerializer):
@@ -92,42 +92,51 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
         candidate = attrs["candidate"]
 
-        if Application.objects.filter(
+        queryset = Application.objects.filter(
             candidate=candidate,
             job=job,
-        ).exists():
+        )
+
+        if self.instance:
+            queryset = queryset.exclude(
+                pk=self.instance.pk,
+            )
+
+        if queryset.exists():
             raise serializers.ValidationError(
                 {
-                    "candidate": ("This candidate has already been added to this job."),
+                    "candidate": ("This candidate has already applied to this job."),
                 }
             )
-
-        if candidate and job:
-            queryset = Application.objects.filter(
-                candidate=candidate,
-                job=job,
-            )
-
-            if self.instance:
-                queryset = queryset.exclude(
-                    pk=self.instance.pk,
-                )
-
-            if queryset.exists():
-                raise serializers.ValidationError(
-                    {
-                        "candidate": (
-                            "This candidate has already applied to this job."
-                        ),
-                    }
-                )
 
         return attrs
 
     def create(self, validated_data):
         job = self.context["job"]
+        changed_by = self.context["request"].user
 
-        return Application.objects.create(
+        return Application.create_with_history(
+            candidate=validated_data["candidate"],
             job=job,
-            **validated_data,
+            notes=validated_data.get("notes", ""),
+            changed_by=changed_by,
         )
+
+
+class ApplicationStatusHistorySerializer(
+    serializers.ModelSerializer,
+):
+    changed_by = serializers.EmailField(
+        source="changed_by.email",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ApplicationStatusHistory
+        fields = [
+            "id",
+            "from_status",
+            "to_status",
+            "changed_by",
+            "created_at",
+        ]

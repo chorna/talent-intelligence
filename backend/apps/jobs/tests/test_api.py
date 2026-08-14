@@ -837,9 +837,8 @@ class JobViewSetTests(APITestCase):
         )
 
         response = self.client.post(
-            f"{self.url}{self.job.id}/applications/status/",
+            f"{self.url}{self.job.id}/applications/{application.id}/status/",
             {
-                "application": str(application.id),
                 "status": ApplicationStatus.SCREENING,
             },
             format="json",
@@ -864,9 +863,8 @@ class JobViewSetTests(APITestCase):
         )
 
         response = self.client.post(
-            f"{self.url}{self.job.id}/applications/status/",
+            f"{self.url}{self.job.id}/applications/{application.id}/status/",
             {
-                "application": str(application.id),
                 "status": ApplicationStatus.HIRED,
             },
             format="json",
@@ -881,13 +879,11 @@ class JobViewSetTests(APITestCase):
         application = Application.objects.create(
             candidate=self.candidate,
             job=self.job,
-            status=ApplicationStatus.INTERVIEW,
         )
 
         response = self.client.post(
-            f"{self.url}{self.job.id}/applications/status/",
+            f"{self.url}{self.job.id}/applications/{application.id}/status/",
             {
-                "application": str(application.id),
                 "status": ApplicationStatus.REJECTED,
             },
             format="json",
@@ -898,13 +894,6 @@ class JobViewSetTests(APITestCase):
             status.HTTP_200_OK,
         )
 
-        application.refresh_from_db()
-
-        self.assertEqual(
-            application.status,
-            ApplicationStatus.REJECTED,
-        )
-
     def test_rejected_application_cannot_return_to_pipeline(self):
         application = Application.objects.create(
             candidate=self.candidate,
@@ -913,10 +902,9 @@ class JobViewSetTests(APITestCase):
         )
 
         response = self.client.post(
-            f"{self.url}{self.job.id}/applications/status/",
+            f"{self.url}{self.job.id}/applications/{application.id}/status/",
             {
-                "application": str(application.id),
-                "status": ApplicationStatus.INTERVIEW,
+                "status": ApplicationStatus.SCREENING,
             },
             format="json",
         )
@@ -933,9 +921,8 @@ class JobViewSetTests(APITestCase):
         )
 
         response = self.client.post(
-            f"{self.url}{self.job.id}/applications/status/",
+            f"{self.url}{self.job.id}/applications/{application.id}/status/",
             {
-                "application": str(application.id),
                 "status": ApplicationStatus.SCREENING,
             },
             format="json",
@@ -944,4 +931,132 @@ class JobViewSetTests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_recruiter_can_list_application_history(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        application.transition_to(
+            ApplicationStatus.SCREENING,
+            changed_by=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/{application.id}/history/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]["from_status"],
+            ApplicationStatus.APPLIED,
+        )
+
+        self.assertEqual(
+            response.data[0]["to_status"],
+            ApplicationStatus.SCREENING,
+        )
+
+        self.assertEqual(
+            response.data[0]["changed_by"],
+            self.recruiter.email,
+        )
+
+    def test_application_history_must_belong_to_job(self):
+        other_job = Job.objects.create(
+            title="Other Backend Engineer",
+            description="Other position.",
+            city=self.lima,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=other_job,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/{application.id}/history/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_recruiter_from_other_organization_cannot_view_application_history(
+        self,
+    ):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        application.transition_to(
+            ApplicationStatus.SCREENING,
+            changed_by=self.recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.other_recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/{application.id}/history/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_update_application_status_creates_history(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/{application.id}/status/",
+            {
+                "status": ApplicationStatus.SCREENING,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        history = application.status_history.get()
+
+        self.assertEqual(
+            history.from_status,
+            ApplicationStatus.APPLIED,
+        )
+
+        self.assertEqual(
+            history.to_status,
+            ApplicationStatus.SCREENING,
+        )
+
+        self.assertEqual(
+            history.changed_by,
+            self.recruiter,
         )

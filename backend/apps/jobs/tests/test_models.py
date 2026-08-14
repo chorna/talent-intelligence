@@ -269,6 +269,7 @@ class ApplicationModelTests(TestCase):
 
         application.transition_to(
             ApplicationStatus.SCREENING,
+            changed_by=self.user,
         )
 
         application.refresh_from_db()
@@ -287,6 +288,7 @@ class ApplicationModelTests(TestCase):
         with self.assertRaises(ValidationError):
             application.transition_to(
                 ApplicationStatus.HIRED,
+                changed_by=self.user,
             )
 
         application.refresh_from_db()
@@ -332,4 +334,76 @@ class ApplicationModelTests(TestCase):
             application.can_transition_to(
                 ApplicationStatus.SCREENING,
             ),
+        )
+
+    def test_application_creation_creates_status_history(self):
+        application = Application.create_with_history(
+            candidate=self.candidate,
+            job=self.job,
+            changed_by=self.user,
+        )
+
+        history = application.status_history.get()
+
+        self.assertIsNone(
+            history.from_status,
+        )
+
+        self.assertEqual(
+            history.to_status,
+            ApplicationStatus.APPLIED,
+        )
+
+        self.assertEqual(
+            history.changed_by,
+            self.user,
+        )
+
+    def test_application_transition_creates_status_history(self):
+        application = Application.create_with_history(
+            candidate=self.candidate,
+            job=self.job,
+            changed_by=self.user,
+        )
+
+        application.transition_to(
+            ApplicationStatus.SCREENING,
+            changed_by=self.user,
+        )
+
+        history = application.status_history.order_by(
+            "created_at",
+        ).last()
+
+        self.assertEqual(
+            history.from_status,
+            ApplicationStatus.APPLIED,
+        )
+
+        self.assertEqual(
+            history.to_status,
+            ApplicationStatus.SCREENING,
+        )
+
+        self.assertEqual(
+            history.changed_by,
+            self.user,
+        )
+
+    def test_invalid_transition_does_not_create_history(self):
+        application = Application.create_with_history(
+            candidate=self.candidate,
+            job=self.job,
+            changed_by=self.user,
+        )
+
+        with self.assertRaises(ValidationError):
+            application.transition_to(
+                ApplicationStatus.HIRED,
+                changed_by=self.user,
+            )
+
+        self.assertEqual(
+            application.status_history.count(),
+            1,
         )
