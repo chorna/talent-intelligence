@@ -23,7 +23,7 @@ class Application(BaseModel):
     status = models.CharField(
         max_length=20,
         choices=ApplicationStatus.choices,
-        default=ApplicationStatus.NEW,
+        default=ApplicationStatus.APPLIED,
     )
     notes = models.TextField(
         blank=True,

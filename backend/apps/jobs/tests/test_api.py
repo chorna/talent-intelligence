@@ -2,8 +2,14 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.jobs.choices import EmploymentType, JobStatus, WorkMode
-from apps.jobs.models import Job
+from apps.candidates.models import Candidate
+from apps.jobs.choices import (
+    ApplicationStatus,
+    EmploymentType,
+    JobStatus,
+    WorkMode,
+)
+from apps.jobs.models import Application, Job
 from apps.locations.models import City, Country
 from apps.organizations.models import Organization
 
@@ -83,6 +89,23 @@ class JobViewSetTests(APITestCase):
             status=JobStatus.OPEN,
             organization=self.organization,
             created_by=self.recruiter,
+        )
+
+        self.other_job = Job.objects.create(
+            title="Other Backend Engineer",
+            description="Other company position.",
+            city=self.lima,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            organization=self.other_organization,
+            created_by=self.other_recruiter,
+        )
+
+        self.candidate = Candidate.objects.create(
+            first_name="Christian",
+            last_name="Horna",
+            email="christian@example.com",
+            city=self.lima,
         )
 
     def test_list_jobs(self):
@@ -655,4 +678,154 @@ class JobViewSetTests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_list_job_applications(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            str(response.data[0]["candidate"]),
+            str(self.candidate.id),
+        )
+
+    def test_list_job_applications_returns_empty_list(self):
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data,
+            [],
+        )
+
+    def test_create_job_application(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            Application.objects.count(),
+            1,
+        )
+
+        application = Application.objects.get()
+
+        self.assertEqual(
+            application.job,
+            self.job,
+        )
+
+        self.assertEqual(
+            application.candidate,
+            self.candidate,
+        )
+
+        self.assertEqual(
+            application.status,
+            ApplicationStatus.APPLIED,
+        )
+
+    def test_create_application_uses_job_from_url(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/",
+            {
+                "candidate": str(self.candidate.id),
+                "job": str(self.other_job.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        application = Application.objects.get()
+
+        self.assertEqual(
+            application.job,
+            self.job,
+        )
+
+    def test_create_duplicate_application_is_rejected(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_recruiter_cannot_access_other_organization_job_applications(self):
+        response = self.client.get(
+            f"{self.url}{self.other_job.id}/applications/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_recruiter_cannot_create_application_for_other_organization_job(
+        self,
+    ):
+        response = self.client.post(
+            f"{self.url}{self.other_job.id}/applications/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            Application.objects.filter(
+                job=self.other_job,
+                candidate=self.candidate,
+            ).exists(),
         )

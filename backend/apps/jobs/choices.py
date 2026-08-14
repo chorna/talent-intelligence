@@ -23,7 +23,7 @@ class WorkMode(models.TextChoices):
 
 
 class ApplicationStatus(models.TextChoices):
-    NEW = "new", "New"
+    APPLIED = "applied", "Applied"
     SCREENING = "screening", "Screening"
     INTERVIEW = "interview", "Interview"
     OFFER = "offer", "Offer"

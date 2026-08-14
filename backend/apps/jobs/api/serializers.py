@@ -76,20 +76,31 @@ class ApplicationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "job",
+            "status",
             "created_at",
             "updated_at",
         ]
 
     def validate(self, attrs):
-        candidate = attrs.get(
-            "candidate",
-            getattr(self.instance, "candidate", None),
-        )
+        job = self.context.get("job")
 
-        job = attrs.get(
-            "job",
-            getattr(self.instance, "job", None),
-        )
+        if job is None:
+            raise serializers.ValidationError(
+                "Job is required.",
+            )
+
+        candidate = attrs["candidate"]
+
+        if Application.objects.filter(
+            candidate=candidate,
+            job=job,
+        ).exists():
+            raise serializers.ValidationError(
+                {
+                    "candidate": ("This candidate has already been added to this job."),
+                }
+            )
 
         if candidate and job:
             queryset = Application.objects.filter(
@@ -112,3 +123,11 @@ class ApplicationSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+    def create(self, validated_data):
+        job = self.context["job"]
+
+        return Application.objects.create(
+            job=job,
+            **validated_data,
+        )

@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.test import TestCase
 
 from apps.candidates.models import Candidate
@@ -161,9 +162,14 @@ class JobModelTests(TestCase):
 
 class ApplicationModelTests(TestCase):
     def setUp(self):
+        self.organization = Organization.objects.create(
+            name="ACME Technologies",
+        )
+
         self.user = User.objects.create_user(
             email="recruiter@example.com",
             password="testpassword123",
+            organization=self.organization,
         )
 
         self.country = Country.objects.create(
@@ -189,6 +195,7 @@ class ApplicationModelTests(TestCase):
             city=self.city,
             employment_type=EmploymentType.FULL_TIME,
             work_mode=WorkMode.HYBRID,
+            organization=self.organization,
             created_by=self.user,
         )
 
@@ -200,7 +207,7 @@ class ApplicationModelTests(TestCase):
 
         self.assertEqual(
             application.status,
-            ApplicationStatus.NEW,
+            ApplicationStatus.APPLIED,
         )
 
     def test_application_candidate_job_is_unique(self):
@@ -209,8 +216,47 @@ class ApplicationModelTests(TestCase):
             job=self.job,
         )
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             Application.objects.create(
                 candidate=self.candidate,
                 job=self.job,
             )
+
+    def test_application_status_can_be_updated(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        application.status = ApplicationStatus.SCREENING
+        application.save(update_fields=["status"])
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.status,
+            ApplicationStatus.SCREENING,
+        )
+
+    def test_application_notes_are_optional(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        self.assertEqual(
+            application.notes,
+            "",
+        )
+
+    def test_application_can_have_notes(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            notes="Strong Django experience.",
+        )
+
+        self.assertEqual(
+            application.notes,
+            "Strong Django experience.",
+        )

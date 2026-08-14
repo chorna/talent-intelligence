@@ -1,16 +1,15 @@
 from django.db.models import Q
+from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
 from apps.jobs.models import Application, Job
 
-from .serializers import (
-    ApplicationSerializer,
-    JobSerializer,
-)
+from .serializers import ApplicationSerializer, JobSerializer
 
 
 class JobViewSet(ModelViewSet):
@@ -37,7 +36,7 @@ class JobViewSet(ModelViewSet):
             "city",
         )
 
-        status = self.request.query_params.get("status")
+        status_filter = self.request.query_params.get("status")
         work_mode = self.request.query_params.get("work_mode")
         employment_type = self.request.query_params.get(
             "employment_type",
@@ -46,9 +45,9 @@ class JobViewSet(ModelViewSet):
         country = self.request.query_params.get("country")
         search = self.request.query_params.get("search")
 
-        if status:
+        if status_filter:
             queryset = queryset.filter(
-                status__iexact=status,
+                status__iexact=status_filter,
             )
 
         if work_mode:
@@ -84,45 +83,52 @@ class JobViewSet(ModelViewSet):
             created_by=self.request.user,
         )
 
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="applications",
+    )
+    def applications(self, request, pk=None):
+        job = self.get_object()
 
-class ApplicationViewSet(ModelViewSet):
-    serializer_class = ApplicationSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = DefaultPagination
-    filter_backends = [OrderingFilter]
-
-    ordering_fields = [
-        "created_at",
-        "updated_at",
-        "status",
-    ]
-
-    ordering = ["-created_at"]
-
-    def get_queryset(self):
-        queryset = Application.objects.select_related(
+        applications = Application.objects.filter(
+            job=job,
+        ).select_related(
             "candidate",
-            "job",
-            "job__created_by",
-        ).all()
+            "candidate__city",
+        )
 
-        job = self.request.query_params.get("job")
-        candidate = self.request.query_params.get("candidate")
-        status = self.request.query_params.get("status")
+        serializer = ApplicationSerializer(
+            applications,
+            many=True,
+            context={"request": request},
+        )
 
-        if job:
-            queryset = queryset.filter(
-                job_id=job,
-            )
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
-        if candidate:
-            queryset = queryset.filter(
-                candidate_id=candidate,
-            )
+    @applications.mapping.post
+    def create_application(self, request, pk=None):
+        job = self.get_object()
 
-        if status:
-            queryset = queryset.filter(
-                status__iexact=status,
-            )
+        serializer = ApplicationSerializer(
+            data=request.data,
+            context={
+                "request": request,
+                "job": job,
+            },
+        )
 
-        return queryset
+        serializer.is_valid(raise_exception=True)
+
+        application = serializer.save()
+
+        return Response(
+            ApplicationSerializer(
+                application,
+                context={"request": request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
