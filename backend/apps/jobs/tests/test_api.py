@@ -829,3 +829,119 @@ class JobViewSetTests(APITestCase):
                 candidate=self.candidate,
             ).exists(),
         )
+
+    def test_application_can_move_to_screening(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/status/",
+            {
+                "application": str(application.id),
+                "status": ApplicationStatus.SCREENING,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.status,
+            ApplicationStatus.SCREENING,
+        )
+
+    def test_application_cannot_move_directly_to_hired(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/status/",
+            {
+                "application": str(application.id),
+                "status": ApplicationStatus.HIRED,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_application_can_be_rejected(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.INTERVIEW,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/status/",
+            {
+                "application": str(application.id),
+                "status": ApplicationStatus.REJECTED,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.status,
+            ApplicationStatus.REJECTED,
+        )
+
+    def test_rejected_application_cannot_return_to_pipeline(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.REJECTED,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/status/",
+            {
+                "application": str(application.id),
+                "status": ApplicationStatus.INTERVIEW,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_cannot_update_application_from_another_job(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.other_job,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/applications/status/",
+            {
+                "application": str(application.id),
+                "status": ApplicationStatus.SCREENING,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )

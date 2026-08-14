@@ -260,3 +260,76 @@ class ApplicationModelTests(TestCase):
             application.notes,
             "Strong Django experience.",
         )
+
+    def test_application_can_transition_from_applied_to_screening(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        application.transition_to(
+            ApplicationStatus.SCREENING,
+        )
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.status,
+            ApplicationStatus.SCREENING,
+        )
+
+    def test_application_cannot_transition_from_applied_to_hired(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        with self.assertRaises(ValidationError):
+            application.transition_to(
+                ApplicationStatus.HIRED,
+            )
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.status,
+            ApplicationStatus.APPLIED,
+        )
+
+    def test_rejected_application_is_terminal(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.REJECTED,
+        )
+
+        self.assertFalse(
+            application.can_transition_to(
+                ApplicationStatus.SCREENING,
+            ),
+        )
+
+    def test_hired_application_is_terminal(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.HIRED,
+        )
+
+        self.assertFalse(
+            application.can_transition_to(
+                ApplicationStatus.REJECTED,
+            ),
+        )
+
+    def test_can_transition_to_returns_true_for_valid_transition(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        self.assertTrue(
+            application.can_transition_to(
+                ApplicationStatus.SCREENING,
+            ),
+        )

@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import action
@@ -131,4 +132,66 @@ class JobViewSet(ModelViewSet):
                 context={"request": request},
             ).data,
             status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="applications/status",
+    )
+    def update_application_status(self, request, pk=None):
+        job = self.get_object()
+
+        application_id = request.data.get("application")
+        new_status = request.data.get("status")
+
+        if not application_id:
+            return Response(
+                {
+                    "application": [
+                        "This field is required.",
+                    ],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not new_status:
+            return Response(
+                {
+                    "status": [
+                        "This field is required.",
+                    ],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            application = Application.objects.get(
+                id=application_id,
+                job=job,
+            )
+        except Application.DoesNotExist:
+            return Response(
+                {
+                    "detail": "Application not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            application.transition_to(new_status)
+        except ValidationError as exc:
+            return Response(
+                exc.message_dict,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ApplicationSerializer(
+            application,
+            context={"request": request},
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
         )

@@ -449,6 +449,14 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Pagination
 - [x] Ordering
 
+### Organizations & Recruiters
+
+- [x] Organization management
+- [x] User ↔ Organization relationship
+- [x] Recruiter management
+- [x] Organization-based access control
+- [x] Recruiter isolation by organization
+
 ### Jobs & Recruiter Workflow
 
 - [x] Job management
@@ -459,10 +467,22 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Remote jobs without city
 - [x] Hybrid / on-site jobs with city
 - [ ] Job skills
-- [ ] Job search / filtering
-- [ ] Candidate applications
-- [ ] Application status
-- [ ] Application pipeline
+- [x] Job search / filtering
+- [x] Job ordering
+- [x] Organization job isolation
+
+### Applications
+
+- [x] Candidate applications
+- [x] Application uniqueness per candidate / job
+- [x] List applications by job
+- [x] Create application
+- [x] Application status
+- [x] Application pipeline
+- [x] Pipeline transition validation
+- [x] Organization isolation
+- [ ] Application history
+- [ ] Application notes
 - [ ] Recruiter workflow
 - [ ] Recruiter dashboard
 
