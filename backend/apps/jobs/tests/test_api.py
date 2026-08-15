@@ -1831,3 +1831,160 @@ class JobViewSetTests(APITestCase):
             response.status_code,
             status.HTTP_404_NOT_FOUND,
         )
+
+    def test_recruiter_dashboard_returns_zero_values(self):
+        response = self.client.get(
+            f"{self.url}dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_jobs"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["active_jobs"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            0,
+        )
+
+        for status_value in ApplicationStatus.values:
+            self.assertEqual(
+                response.data["pipeline"][status_value],
+                0,
+            )
+
+    def test_recruiter_dashboard_returns_organization_metrics(self):
+        Job.objects.create(
+            title="Backend Developer",
+            description="Django developer",
+            organization=self.recruiter.organization,
+            created_by=self.recruiter,
+            status=JobStatus.OPEN,
+        )
+
+        Job.objects.create(
+            title="Frontend Developer",
+            description="Vue developer",
+            organization=self.recruiter.organization,
+            created_by=self.recruiter,
+            status=JobStatus.CLOSED,
+        )
+
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.SCREENING,
+        )
+
+        response = self.client.get(
+            f"{self.url}dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_jobs"],
+            3,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"]["screening"],
+            1,
+        )
+
+    def test_recruiter_dashboard_does_not_include_other_organization_data(
+        self,
+    ):
+        other_organization = Organization.objects.create(
+            name="Other Organization",
+        )
+
+        other_job = Job.objects.create(
+            title="Other Backend Job",
+            description="Other job",
+            organization=other_organization,
+            created_by=self.recruiter,
+            status=JobStatus.OPEN,
+        )
+
+        Application.objects.create(
+            candidate=self.candidate,
+            job=other_job,
+            status=ApplicationStatus.HIRED,
+        )
+
+        response = self.client.get(
+            f"{self.url}dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"]["hired"],
+            0,
+        )
+
+    def test_recruiter_dashboard_excludes_other_organization_data(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.other_job,
+            status=ApplicationStatus.HIRED,
+        )
+
+        response = self.client.get(
+            f"{self.url}dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        # self.job pertenece a nuestra organización.
+        self.assertEqual(
+            response.data["total_jobs"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["active_jobs"],
+            1,
+        )
+
+        # La application de la otra organización no debe aparecer.
+        self.assertEqual(
+            response.data["total_applications"],
+            0,
+        )
+
+        for status_value in ApplicationStatus.values:
+            self.assertEqual(
+                response.data["pipeline"][status_value],
+                0,
+            )

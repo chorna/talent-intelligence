@@ -9,7 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
-from apps.jobs.choices import ApplicationStatus
+from apps.jobs.choices import ApplicationStatus, JobStatus
 from apps.jobs.models import Application, Job, JobSkill
 
 from .serializers import (
@@ -451,6 +451,41 @@ class JobViewSet(ModelViewSet):
         return Response(
             {
                 "total": sum(pipeline.values()),
+                "pipeline": pipeline,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="dashboard",
+    )
+    def dashboard(self, request):
+        organization_id = request.user.organization_id
+
+        jobs = Job.objects.filter(
+            organization_id=organization_id,
+        )
+
+        applications = Application.objects.filter(
+            job__organization_id=organization_id,
+        )
+
+        pipeline = {status_value: 0 for status_value in ApplicationStatus.values}
+
+        pipeline_summary = applications.values("status").annotate(total=Count("id"))
+
+        for item in pipeline_summary:
+            pipeline[item["status"]] = item["total"]
+
+        return Response(
+            {
+                "total_jobs": jobs.count(),
+                "active_jobs": jobs.filter(
+                    status=JobStatus.OPEN,
+                ).count(),
+                "total_applications": applications.count(),
                 "pipeline": pipeline,
             },
             status=status.HTTP_200_OK,
