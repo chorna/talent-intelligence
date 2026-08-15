@@ -83,7 +83,7 @@ class JobViewSetTests(APITestCase):
 
         self.job = Job.objects.create(
             title="Senior Backend Engineer",
-            description="Python Django backend engineer.",
+            description="Python and Django backend engineer.",
             city=self.lima,
             employment_type=EmploymentType.FULL_TIME,
             work_mode=WorkMode.HYBRID,
@@ -707,13 +707,18 @@ class JobViewSetTests(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            response.data["count"],
             1,
         )
 
         self.assertEqual(
-            str(response.data[0]["candidate"]),
-            str(self.candidate.id),
+            len(response.data["results"]),
+            1,
+        )
+
+        self.assertEqual(
+            str(response.data["results"][0]["job"]),
+            str(self.job.id),
         )
 
     def test_list_job_applications_returns_empty_list(self):
@@ -727,7 +732,12 @@ class JobViewSetTests(APITestCase):
         )
 
         self.assertEqual(
-            response.data,
+            response.data["count"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["results"],
             [],
         )
 
@@ -1470,4 +1480,354 @@ class JobViewSetTests(APITestCase):
         self.assertEqual(
             response.data["count"],
             1,
+        )
+
+    def test_filter_job_applications_by_status(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.SCREENING,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/?status=screening",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["results"][0]["id"],
+            str(application.id),
+        )
+
+    def test_filter_job_applications_by_status_returns_empty(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.SCREENING,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/?status=hired",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            0,
+        )
+
+    def test_search_job_applications_by_candidate(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/?search=christian",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+    def test_recruiter_cannot_see_applications_from_other_job(self):
+        other_job = Job.objects.create(
+            title="Other Job",
+            description="Other position.",
+            city=self.lima,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        Application.objects.create(
+            candidate=self.candidate,
+            job=other_job,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            0,
+        )
+
+    def test_recruiter_cannot_access_applications_from_other_organization_job(self):
+        other_job = Job.objects.create(
+            title="Other Organization Job",
+            description="Other position.",
+            city=self.bogota,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            organization=self.other_organization,
+            created_by=self.other_recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{other_job.id}/applications/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_order_job_applications_by_created_at(self):
+        first = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        second_candidate = Candidate.objects.create(
+            first_name="John",
+            last_name="Doe",
+            email="john@example.com",
+            city=self.bogota,
+        )
+
+        second = Application.objects.create(
+            candidate=second_candidate,
+            job=self.job,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/?ordering=created_at",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["results"][0]["id"],
+            str(first.id),
+        )
+
+        self.assertEqual(
+            response.data["results"][1]["id"],
+            str(second.id),
+        )
+
+    def test_update_application_notes(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.patch(
+            f"{self.url}{self.job.id}/applications/{application.id}/notes/",
+            {
+                "notes": "Strong Django experience.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.notes,
+            "Strong Django experience.",
+        )
+
+    def test_update_application_notes_replaces_existing_notes(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            notes="Old note",
+        )
+
+        response = self.client.patch(
+            f"{self.url}{self.job.id}/applications/{application.id}/notes/",
+            {
+                "notes": "Updated note",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        application.refresh_from_db()
+
+        self.assertEqual(
+            application.notes,
+            "Updated note",
+        )
+
+    def test_update_application_notes_requires_notes(self):
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+        )
+
+        response = self.client.patch(
+            f"{self.url}{self.job.id}/applications/{application.id}/notes/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "notes",
+            response.data,
+        )
+
+    def test_update_application_notes_cannot_update_application_from_other_job(
+        self,
+    ):
+        other_job = Job.objects.create(
+            title="Other job",
+            description="Other job",
+            organization=self.recruiter.organization,
+            created_by=self.recruiter,
+        )
+
+        application = Application.objects.create(
+            candidate=self.candidate,
+            job=other_job,
+        )
+
+        response = self.client.patch(
+            f"{self.url}{self.job.id}/applications/{application.id}/notes/",
+            {
+                "notes": "Should not update.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_application_summary(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.APPLIED,
+        )
+
+        second_candidate = Candidate.objects.create(
+            first_name="John",
+            last_name="Doe",
+            email="john@example.com",
+            city=self.bogota,
+        )
+
+        Application.objects.create(
+            candidate=second_candidate,
+            job=self.job,
+            status=ApplicationStatus.SCREENING,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/summary/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total"],
+            2,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"]["applied"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"]["screening"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"]["interview"],
+            0,
+        )
+
+    def test_application_summary_returns_zero_for_empty_job(self):
+        response = self.client.get(
+            f"{self.url}{self.job.id}/applications/summary/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total"],
+            0,
+        )
+
+        for status_value in ApplicationStatus.values:
+            self.assertEqual(
+                response.data["pipeline"][status_value],
+                0,
+            )
+
+    def test_application_summary_cannot_access_other_organization_job(
+        self,
+    ):
+        other_organization = Organization.objects.create(
+            name="Other Organization",
+        )
+
+        other_job = Job.objects.create(
+            title="Other Job",
+            description="Other job",
+            organization=other_organization,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{other_job.id}/applications/summary/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
         )

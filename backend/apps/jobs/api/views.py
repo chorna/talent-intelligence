@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
@@ -9,6 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
+from apps.jobs.choices import ApplicationStatus
 from apps.jobs.models import Application, Job, JobSkill
 
 from .serializers import (
@@ -49,9 +50,14 @@ class JobViewSet(ModelViewSet):
             )
         )
 
+        if self.action != "list":
+            return queryset
+
         status_filter = self.request.query_params.get("status")
         work_mode = self.request.query_params.get("work_mode")
-        employment_type = self.request.query_params.get("employment_type")
+        employment_type = self.request.query_params.get(
+            "employment_type",
+        )
         city = self.request.query_params.get("city")
         country = self.request.query_params.get("country")
         search = self.request.query_params.get("search")
@@ -85,10 +91,7 @@ class JobViewSet(ModelViewSet):
 
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search)
-                | Q(description__icontains=search)
-                | Q(job_skills__skill__name__icontains=search)
-                | Q(job_skills__skill__slug__icontains=search),
+                Q(title__icontains=search) | Q(description__icontains=search),
             )
 
         if skill:
@@ -128,6 +131,59 @@ class JobViewSet(ModelViewSet):
             "candidate",
             "candidate__city",
         )
+
+        status_filter = request.query_params.get("status")
+        candidate = request.query_params.get("candidate")
+        search = request.query_params.get("search")
+
+        if status_filter:
+            applications = applications.filter(
+                status__iexact=status_filter,
+            )
+
+        if candidate:
+            applications = applications.filter(
+                candidate_id=candidate,
+            )
+
+        if search:
+            applications = applications.filter(
+                Q(candidate__first_name__icontains=search)
+                | Q(candidate__last_name__icontains=search)
+                | Q(candidate__email__icontains=search)
+            )
+
+        applications = applications.distinct()
+
+        ordering = request.query_params.get(
+            "ordering",
+            "-created_at",
+        )
+
+        allowed_ordering = {
+            "created_at",
+            "-created_at",
+            "updated_at",
+            "-updated_at",
+            "status",
+            "-status",
+        }
+
+        if ordering in allowed_ordering:
+            applications = applications.order_by(ordering)
+
+        page = self.paginate_queryset(applications)
+
+        if page is not None:
+            serializer = ApplicationSerializer(
+                page,
+                many=True,
+                context={"request": request},
+            )
+
+            return self.get_paginated_response(
+                serializer.data,
+            )
 
         serializer = ApplicationSerializer(
             applications,
@@ -320,4 +376,82 @@ class JobViewSet(ModelViewSet):
 
         return Response(
             status=status.HTTP_204_NO_CONTENT,
+        )
+
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="applications/(?P<application_id>[^/.]+)/notes",
+    )
+    def update_application_notes(
+        self,
+        request,
+        pk=None,
+        application_id=None,
+    ):
+        job = self.get_object()
+
+        application = get_object_or_404(
+            Application,
+            id=application_id,
+            job=job,
+        )
+
+        notes = request.data.get("notes")
+
+        if notes is None:
+            return Response(
+                {
+                    "notes": [
+                        "This field is required.",
+                    ],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        application.notes = notes
+        application.save(
+            update_fields=[
+                "notes",
+                "updated_at",
+            ],
+        )
+
+        serializer = ApplicationSerializer(
+            application,
+            context={"request": request},
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="applications/summary",
+    )
+    def applications_summary(self, request, pk=None):
+        job = self.get_object()
+
+        summary = (
+            Application.objects.filter(
+                job=job,
+            )
+            .values("status")
+            .annotate(total=Count("id"))
+        )
+
+        pipeline = {status_value: 0 for status_value, _ in ApplicationStatus.choices}
+
+        for item in summary:
+            pipeline[item["status"]] = item["total"]
+
+        return Response(
+            {
+                "total": sum(pipeline.values()),
+                "pipeline": pipeline,
+            },
+            status=status.HTTP_200_OK,
         )

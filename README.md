@@ -482,8 +482,8 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Pipeline transition validation
 - [x] Organization isolation
 - [x] Application history
-- [ ] Application notes
-- [ ] Recruiter workflow
+- [x] Application notes
+- [x] Recruiter workflow
 - [ ] Recruiter dashboard
 
 ### AI & Intelligence
