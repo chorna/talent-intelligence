@@ -484,7 +484,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Application history
 - [x] Application notes
 - [x] Recruiter workflow
-- [ ] Recruiter dashboard
+- [x] Recruiter dashboard
 
 ### AI & Intelligence
 

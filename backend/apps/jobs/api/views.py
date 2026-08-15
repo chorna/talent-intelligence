@@ -479,14 +479,38 @@ class JobViewSet(ModelViewSet):
         for item in pipeline_summary:
             pipeline[item["status"]] = item["total"]
 
+        total_applications = applications.count()
+
+        hired_rate = (
+            round(
+                pipeline[ApplicationStatus.HIRED] / total_applications * 100,
+                2,
+            )
+            if total_applications
+            else 0
+        )
+
+        rejected_rate = (
+            round(
+                pipeline[ApplicationStatus.REJECTED] / total_applications * 100,
+                2,
+            )
+            if total_applications
+            else 0
+        )
+
         return Response(
             {
                 "total_jobs": jobs.count(),
                 "active_jobs": jobs.filter(
                     status=JobStatus.OPEN,
                 ).count(),
-                "total_applications": applications.count(),
+                "total_applications": total_applications,
                 "pipeline": pipeline,
+                "metrics": {
+                    "hired_rate": hired_rate,
+                    "rejected_rate": rejected_rate,
+                },
             },
             status=status.HTTP_200_OK,
         )

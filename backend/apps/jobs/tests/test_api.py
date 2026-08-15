@@ -1988,3 +1988,84 @@ class JobViewSetTests(APITestCase):
                 response.data["pipeline"][status_value],
                 0,
             )
+
+        self.assertEqual(
+            response.data["metrics"]["hired_rate"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["metrics"]["rejected_rate"],
+            0,
+        )
+
+    def test_recruiter_dashboard_returns_application_metrics(self):
+        Application.objects.create(
+            candidate=self.candidate,
+            job=self.job,
+            status=ApplicationStatus.HIRED,
+        )
+
+        screening_candidate = Candidate.objects.create(
+            first_name="John",
+            last_name="Doe",
+            email="john@example.com",
+            city=self.lima,
+        )
+
+        Application.objects.create(
+            candidate=screening_candidate,
+            job=self.job,
+            status=ApplicationStatus.SCREENING,
+        )
+
+        response = self.client.get(
+            f"{self.url}dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            2,
+        )
+
+        self.assertEqual(
+            response.data["metrics"]["hired_rate"],
+            50.0,
+        )
+
+        self.assertEqual(
+            response.data["metrics"]["rejected_rate"],
+            0,
+        )
+
+    def test_recruiter_dashboard_returns_zero_metrics_for_empty_job(
+        self,
+    ):
+        response = self.client.get(
+            f"{self.url}dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["metrics"]["hired_rate"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["metrics"]["rejected_rate"],
+            0,
+        )
