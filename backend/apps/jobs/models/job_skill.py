@@ -27,6 +27,12 @@ class JobSkill(BaseModel):
                 name="unique_job_skill",
             ),
         ]
+        indexes = [
+            models.Index(
+                fields=["skill", "job"],
+                name="job_skill_skill_job_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.job} - {self.skill}"

@@ -1346,3 +1346,128 @@ class JobViewSetTests(APITestCase):
             response.data["skills"],
             [],
         )
+
+    def test_filter_jobs_by_skill(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.get(
+            f"{self.url}?skill=python",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+    def test_filter_jobs_by_skill_returns_no_match(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.get(
+            f"{self.url}?skill=golang",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            0,
+        )
+
+    def test_filter_jobs_by_multiple_skills(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.django,
+        )
+
+        response = self.client.get(
+            f"{self.url}?skills=python,django",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+    def test_filter_jobs_by_multiple_skills_uses_and_logic(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.get(
+            f"{self.url}?skills=python,django",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            0,
+        )
+
+    def test_search_jobs_by_skill_name(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.get(
+            f"{self.url}?search=python",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+    def test_search_jobs_by_skill_when_skill_is_not_in_job_text(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.get(
+            f"{self.url}?search=python",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )

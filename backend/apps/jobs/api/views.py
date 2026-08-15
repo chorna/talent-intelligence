@@ -51,12 +51,12 @@ class JobViewSet(ModelViewSet):
 
         status_filter = self.request.query_params.get("status")
         work_mode = self.request.query_params.get("work_mode")
-        employment_type = self.request.query_params.get(
-            "employment_type",
-        )
+        employment_type = self.request.query_params.get("employment_type")
         city = self.request.query_params.get("city")
         country = self.request.query_params.get("country")
         search = self.request.query_params.get("search")
+        skill = self.request.query_params.get("skill")
+        skills = self.request.query_params.get("skills")
 
         if status_filter:
             queryset = queryset.filter(
@@ -85,8 +85,26 @@ class JobViewSet(ModelViewSet):
 
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(description__icontains=search),
+                Q(title__icontains=search)
+                | Q(description__icontains=search)
+                | Q(job_skills__skill__name__icontains=search)
+                | Q(job_skills__skill__slug__icontains=search),
             )
+
+        if skill:
+            queryset = queryset.filter(
+                job_skills__skill__slug__iexact=skill,
+            )
+
+        if skills:
+            skill_slugs = [
+                value.strip() for value in skills.split(",") if value.strip()
+            ]
+
+            for skill_slug in skill_slugs:
+                queryset = queryset.filter(
+                    job_skills__skill__slug__iexact=skill_slug,
+                )
 
         return queryset.distinct()
 

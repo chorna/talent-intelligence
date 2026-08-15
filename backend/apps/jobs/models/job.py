@@ -46,6 +46,28 @@ class Job(BaseModel):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["organization", "status"],
+                name="job_org_status_idx",
+            ),
+            models.Index(
+                fields=["organization", "work_mode"],
+                name="job_org_work_mode_idx",
+            ),
+            models.Index(
+                fields=["organization", "employment_type"],
+                name="job_org_employment_idx",
+            ),
+            models.Index(
+                fields=["organization", "city"],
+                name="job_org_city_idx",
+            ),
+            models.Index(
+                fields=["organization", "-created_at"],
+                name="job_org_created_idx",
+            ),
+        ]
 
     def __str__(self):
         return self.title
