@@ -1,4 +1,5 @@
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
@@ -11,6 +12,7 @@ from apps.core.pagination import DefaultPagination
 from .serializers import CandidateNoteSerializer, CandidateSerializer
 
 
+@extend_schema(tags=["Candidates"])
 class CandidateViewSet(ModelViewSet):
     queryset = Candidate.objects.select_related(
         "city",

@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -6,6 +7,7 @@ from apps.locations.models import City, Country
 from .serializers import CitySerializer, CountrySerializer
 
 
+@extend_schema(tags=["Countries"])
 class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Country.objects.filter(
         is_active=True,
@@ -19,6 +21,7 @@ class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     ]
 
 
+@extend_schema(tags=["Cities"])
 class CityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = City.objects.filter(
         is_active=True,

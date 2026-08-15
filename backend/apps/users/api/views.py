@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -13,6 +14,7 @@ from apps.users.api.serializers import (
 )
 
 
+@extend_schema(tags=["Users"])
 class UserViewSet(viewsets.GenericViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]

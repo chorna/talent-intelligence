@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
@@ -20,6 +21,7 @@ from .serializers import (
 )
 
 
+@extend_schema(tags=["Jobs"])
 class JobViewSet(ModelViewSet):
     serializer_class = JobSerializer
     permission_classes = [HasOrganization]

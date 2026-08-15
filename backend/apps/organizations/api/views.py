@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -17,6 +18,7 @@ from .serializers import (
 User = get_user_model()
 
 
+@extend_schema(tags=["Organizations"])
 class OrganizationViewSet(ModelViewSet):
     queryset = Organization.objects.prefetch_related("users")
     serializer_class = OrganizationSerializer
