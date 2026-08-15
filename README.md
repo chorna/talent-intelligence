@@ -466,7 +466,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Job location
 - [x] Remote jobs without city
 - [x] Hybrid / on-site jobs with city
-- [ ] Job skills
+- [x] Job skills
 - [x] Job search / filtering
 - [x] Job ordering
 - [x] Organization job isolation

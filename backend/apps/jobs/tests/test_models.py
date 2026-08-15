@@ -12,9 +12,11 @@ from apps.jobs.choices import (
 from apps.jobs.models import (
     Application,
     Job,
+    JobSkill,
 )
 from apps.locations.models import City, Country
 from apps.organizations.models import Organization
+from apps.skills.models import Skill
 from apps.users.models import User
 
 
@@ -406,4 +408,103 @@ class ApplicationModelTests(TestCase):
         self.assertEqual(
             application.status_history.count(),
             1,
+        )
+
+
+class JobSkillModelTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name="ACME Technologies",
+        )
+
+        self.recruiter = User.objects.create_user(
+            email="recruiter@example.com",
+            password="testpassword123",
+            organization=self.organization,
+        )
+
+        self.job = Job.objects.create(
+            title="Senior Backend Engineer",
+            description="Python Django backend engineer.",
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        self.python = Skill.objects.create(
+            name="Python",
+            slug="python",
+        )
+
+    def test_create_job_skill(self):
+        job_skill = JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        self.assertEqual(
+            job_skill.job,
+            self.job,
+        )
+
+        self.assertEqual(
+            job_skill.skill,
+            self.python,
+        )
+
+        self.assertTrue(
+            job_skill.is_required,
+        )
+
+    def test_job_skill_is_unique_per_job(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        with self.assertRaises(IntegrityError):
+            JobSkill.objects.create(
+                job=self.job,
+                skill=self.python,
+            )
+
+    def test_skill_can_be_used_by_multiple_jobs(self):
+        another_job = Job.objects.create(
+            title="Python Developer",
+            description="Python position.",
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        JobSkill.objects.create(
+            job=another_job,
+            skill=self.python,
+        )
+
+        self.assertEqual(
+            JobSkill.objects.filter(
+                skill=self.python,
+            ).count(),
+            2,
+        )
+
+    def test_job_skill_can_be_optional(self):
+        job_skill = JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+            is_required=False,
+        )
+
+        self.assertFalse(
+            job_skill.is_required,
         )

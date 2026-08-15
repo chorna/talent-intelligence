@@ -9,12 +9,13 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
-from apps.jobs.models import Application, Job
+from apps.jobs.models import Application, Job, JobSkill
 
 from .serializers import (
     ApplicationSerializer,
     ApplicationStatusHistorySerializer,
     JobSerializer,
+    JobSkillSerializer,
 )
 
 
@@ -34,12 +35,18 @@ class JobViewSet(ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        queryset = Job.objects.filter(
-            organization_id=self.request.user.organization_id,
-        ).select_related(
-            "organization",
-            "created_by",
-            "city",
+        queryset = (
+            Job.objects.filter(
+                organization_id=self.request.user.organization_id,
+            )
+            .select_related(
+                "organization",
+                "created_by",
+                "city",
+            )
+            .prefetch_related(
+                "job_skills__skill",
+            )
         )
 
         status_filter = self.request.query_params.get("status")
@@ -222,4 +229,77 @@ class JobViewSet(ModelViewSet):
         return Response(
             serializer.data,
             status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="skills",
+    )
+    def skills(self, request, pk=None):
+        job = self.get_object()
+
+        job_skills = JobSkill.objects.filter(
+            job=job,
+        ).select_related(
+            "skill",
+        )
+
+        serializer = JobSkillSerializer(
+            job_skills,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @skills.mapping.post
+    def create_skill(self, request, pk=None):
+        job = self.get_object()
+
+        serializer = JobSkillSerializer(
+            data=request.data,
+            context={
+                "job": job,
+            },
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        job_skill = serializer.save(
+            job=job,
+        )
+
+        return Response(
+            JobSkillSerializer(job_skill).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r"skills/(?P<skill_id>[^/.]+)",
+    )
+    def delete_skill(
+        self,
+        request,
+        pk=None,
+        skill_id=None,
+    ):
+        job = self.get_object()
+
+        job_skill = get_object_or_404(
+            JobSkill,
+            job=job,
+            skill_id=skill_id,
+        )
+
+        job_skill.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
         )

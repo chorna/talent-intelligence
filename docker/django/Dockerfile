@@ -8,8 +8,12 @@ WORKDIR /app
 COPY backend .
 
 RUN apt-get update && \
-    apt-get install -y gcc libpq-dev postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+        gcc \
+        libpq-dev \
+        postgresql-client \
+        graphviz \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements ./requirements
 

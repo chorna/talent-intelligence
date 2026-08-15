@@ -9,9 +9,10 @@ from apps.jobs.choices import (
     JobStatus,
     WorkMode,
 )
-from apps.jobs.models import Application, Job
+from apps.jobs.models import Application, Job, JobSkill
 from apps.locations.models import City, Country
 from apps.organizations.models import Organization
+from apps.skills.models import Skill
 
 User = get_user_model()
 
@@ -106,6 +107,16 @@ class JobViewSetTests(APITestCase):
             last_name="Horna",
             email="christian@example.com",
             city=self.lima,
+        )
+
+        self.python = Skill.objects.create(
+            name="Python",
+            slug="python",
+        )
+
+        self.django = Skill.objects.create(
+            name="Django",
+            slug="django",
         )
 
     def test_list_jobs(self):
@@ -1059,4 +1070,279 @@ class JobViewSetTests(APITestCase):
         self.assertEqual(
             history.changed_by,
             self.recruiter,
+        )
+
+    def test_list_job_skills(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+            is_required=True,
+        )
+
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.django,
+            is_required=False,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/skills/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            2,
+        )
+
+        skill_names = {item["skill_name"] for item in response.data}
+
+        self.assertEqual(
+            skill_names,
+            {"Python", "Django"},
+        )
+
+    def test_add_job_skill(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/skills/",
+            {
+                "skill": str(self.python.id),
+                "is_required": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            JobSkill.objects.filter(
+                job=self.job,
+                skill=self.python,
+            ).count(),
+            1,
+        )
+
+        self.assertTrue(
+            response.data["is_required"],
+        )
+
+    def test_add_optional_job_skill(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/skills/",
+            {
+                "skill": str(self.python.id),
+                "is_required": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertFalse(
+            response.data["is_required"],
+        )
+
+    def test_add_duplicate_job_skill_is_rejected(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/skills/",
+            {
+                "skill": str(self.python.id),
+                "is_required": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_delete_job_skill(self):
+        job_skill = JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.job.id}/skills/{self.python.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            JobSkill.objects.filter(
+                id=job_skill.id,
+            ).exists(),
+        )
+
+    def test_recruiter_cannot_list_skills_from_other_organization_job(self):
+        response = self.client.get(
+            f"{self.url}{self.other_job.id}/skills/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_recruiter_cannot_add_skill_to_other_organization_job(self):
+        response = self.client.post(
+            f"{self.url}{self.other_job.id}/skills/",
+            {
+                "skill": str(self.python.id),
+                "is_required": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            JobSkill.objects.filter(
+                job=self.other_job,
+                skill=self.python,
+            ).exists(),
+        )
+
+    def test_recruiter_cannot_delete_skill_from_other_organization_job(self):
+        job_skill = JobSkill.objects.create(
+            job=self.other_job,
+            skill=self.python,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.other_job.id}/skills/{self.python.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertTrue(
+            JobSkill.objects.filter(
+                id=job_skill.id,
+            ).exists(),
+        )
+
+    def test_user_without_organization_cannot_list_job_skills(self):
+        self.client.force_authenticate(
+            user=self.unassigned_user,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/skills/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_user_without_organization_cannot_add_job_skill(self):
+        self.client.force_authenticate(
+            user=self.unassigned_user,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/skills/",
+            {
+                "skill": str(self.python.id),
+                "is_required": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_unauthenticated_user_cannot_list_job_skills(self):
+        self.client.force_authenticate(
+            user=None,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/skills/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_retrieve_job_includes_skills(self):
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.python,
+            is_required=True,
+        )
+
+        JobSkill.objects.create(
+            job=self.job,
+            skill=self.django,
+            is_required=False,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data["skills"]),
+            2,
+        )
+
+        skills = {
+            item["skill_name"]: item["is_required"] for item in response.data["skills"]
+        }
+
+        self.assertEqual(
+            skills,
+            {
+                "Python": True,
+                "Django": False,
+            },
+        )
+
+    def test_retrieve_job_without_skills_returns_empty_list(self):
+        response = self.client.get(
+            f"{self.url}{self.job.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["skills"],
+            [],
         )
