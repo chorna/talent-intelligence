@@ -404,6 +404,8 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Testing infrastructure
 - [x] Ruff / code quality
 
+---
+
 ### Authentication & Users
 
 - [x] Authentication
@@ -412,6 +414,18 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] JWT authentication
 - [x] User profile
 - [x] Logout / token revocation
+
+---
+
+### Organizations & Recruiters
+
+- [x] Organization management
+- [x] User ↔ Organization relationship
+- [x] Recruiter management
+- [x] Organization-based access control
+- [x] Recruiter isolation by organization
+
+---
 
 ### Candidate Management
 
@@ -425,6 +439,8 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Candidate favorites
 - [x] Candidate notes
 
+---
+
 ### Locations
 
 - [x] Country management
@@ -433,6 +449,8 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Country / City fixtures
 - [x] Candidate location
 - [x] Location API
+
+---
 
 ### Candidate Search
 
@@ -449,15 +467,21 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Pagination
 - [x] Ordering
 
-### Organizations & Recruiters
+---
 
-- [x] Organization management
-- [x] User ↔ Organization relationship
-- [x] Recruiter management
-- [x] Organization-based access control
-- [x] Recruiter isolation by organization
+### Agency CRM
 
-### Jobs & Recruiter Workflow
+- [ ] Client management
+- [ ] Client contacts
+- [ ] Client ↔ Organization relationship
+- [ ] Client status
+- [ ] Client notes
+- [ ] Client search / filtering
+- [ ] Client isolation by organization
+
+---
+
+### Jobs
 
 - [x] Job management
 - [x] Job status
@@ -470,8 +494,11 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Job search / filtering
 - [x] Job ordering
 - [x] Organization job isolation
+- [ ] Client ↔ Job relationship
 
-### Applications
+---
+
+### Recruiter Workflow
 
 - [x] Candidate applications
 - [x] Application uniqueness per candidate / job
@@ -485,21 +512,93 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Application notes
 - [x] Recruiter workflow
 - [x] Recruiter dashboard
+- [ ] Candidate shortlist
+- [ ] Candidate submission
+- [ ] Client candidate feedback
+- [ ] Interview tracking
+- [ ] Offer tracking
+- [ ] Placement tracking
+
+---
 
 ### AI & Intelligence
 
 - [ ] AI Skill Extractor
+- [ ] Candidate profile enrichment
 - [ ] Embeddings
 - [ ] Semantic Candidate Search
-- [ ] Candidate matching
+- [ ] Job ↔ Candidate matching
 - [ ] Candidate ranking / scoring
+- [ ] Match explanation
+- [ ] Similar candidate search
 - [ ] Recruiter Chat
+
+---
 
 ### Candidate Import
 
 - [ ] CV Import
+- [ ] Bulk CV Import
 - [ ] GitHub Import
 - [ ] LinkedIn Connector (where permitted by platform policies)
+- [ ] Candidate deduplication
+- [ ] Automatic skill extraction
+- [ ] Candidate profile enrichment
+
+---
+
+### Candidate Presentation
+
+- [ ] Create shortlist
+- [ ] Select candidates for submission
+- [ ] Generate candidate presentation
+- [ ] Candidate presentation PDF
+- [ ] Send candidate presentation
+- [ ] Client feedback
+- [ ] Candidate approval / rejection
+
+---
+
+### Client Portal
+
+- [ ] Client authentication
+- [ ] Client positions
+- [ ] Submitted candidates
+- [ ] Candidate profile view
+- [ ] Approve candidate
+- [ ] Reject candidate
+- [ ] Request interview
+- [ ] Client feedback
+
+---
+
+### Agency Intelligence
+
+- [ ] Recruiter performance
+- [ ] Client performance
+- [ ] Placement metrics
+- [ ] Time to shortlist
+- [ ] Time to hire
+- [ ] Conversion rates
+- [ ] Most demanded skills
+- [ ] Candidate source performance
+- [ ] Revenue / placement metrics
+
+---
+
+### LATAM Expansion
+
+- [ ] Multi-country support
+- [ ] Multi-currency
+- [ ] Country-specific configuration
+- [ ] Spanish / English
+- [ ] LATAM expansion
+- [ ] Colombia
+- [ ] Chile
+- [ ] Mexico
+- [ ] Argentina
+
+---
 
 ### Production
 
@@ -508,9 +607,12 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [ ] Rate limiting
 - [ ] Structured logging
 - [ ] Observability
+- [ ] Error tracking
 - [ ] CI/CD
 - [ ] Production deployment
 - [ ] Security hardening
+- [ ] Backup / restore strategy
+- [ ] Database migration strategy
 
 ---
 
