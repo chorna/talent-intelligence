@@ -471,13 +471,13 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ### Agency CRM
 
-- [ ] Client management
-- [ ] Client contacts
-- [ ] Client ↔ Organization relationship
+- [x] Client management
+- [x] Client contacts
+- [x] Client ↔ Organization relationship
 - [ ] Client status
 - [ ] Client notes
-- [ ] Client search / filtering
-- [ ] Client isolation by organization
+- [x] Client search / filtering
+- [x] Client isolation by organization
 
 ---
 

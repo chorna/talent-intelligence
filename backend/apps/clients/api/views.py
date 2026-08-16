@@ -2,6 +2,7 @@ from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -20,6 +21,16 @@ class ClientViewSet(ModelViewSet):
     serializer_class = ClientSerializer
     permission_classes = [HasOrganization]
     pagination_class = DefaultPagination
+    filter_backends = [OrderingFilter]
+
+    ordering_fields = [
+        "name",
+        "created_at",
+        "updated_at",
+        "status",
+    ]
+
+    ordering = ["name"]
 
     def get_queryset(self):
         queryset = (

@@ -410,6 +410,53 @@ class ClientViewSetTests(APITestCase):
             status.HTTP_404_NOT_FOUND,
         )
 
+    def test_search_clients_with_no_results(self):
+        response = self.client.get(
+            f"{self.url}?search=nonexistent",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            0,
+        )
+
+    def test_filter_clients_by_status_and_search(self):
+        Client.objects.create(
+            organization=self.organization,
+            name="ACME Active",
+            status=ClientStatus.ACTIVE,
+        )
+
+        Client.objects.create(
+            organization=self.organization,
+            name="ACME Inactive",
+            status=ClientStatus.INACTIVE,
+        )
+
+        response = self.client.get(
+            f"{self.url}?status=active&search=ACME",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["results"][0]["name"],
+            "ACME Active",
+        )
+
 
 class ClientContactViewSetTests(APITestCase):
     def setUp(self):
