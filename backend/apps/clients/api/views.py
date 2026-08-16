@@ -12,6 +12,7 @@ from apps.clients.api.serializers import (
 from apps.clients.models import Client
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
+from apps.jobs.api.serializers import JobSerializer
 
 
 @extend_schema(tags=["Clients"])
@@ -102,4 +103,24 @@ class ClientViewSet(ModelViewSet):
         return Response(
             ClientContactSerializer(contact).data,
             status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="jobs",
+    )
+    def jobs(self, request, pk=None):
+        client = self.get_object()
+
+        jobs = client.jobs.all()
+
+        serializer = JobSerializer(
+            jobs,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            serializer.data,
         )

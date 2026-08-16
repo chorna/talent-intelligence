@@ -16,6 +16,7 @@ class JobSerializer(serializers.ModelSerializer):
         model = Job
         fields = (
             "id",
+            "client",
             "title",
             "description",
             "city",
@@ -34,6 +35,21 @@ class JobSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+    def validate_client(self, client):
+        organization = self.context.get("organization")
+
+        if organization is None:
+            raise serializers.ValidationError(
+                "Organization is required.",
+            )
+
+        if client.organization_id != organization.id:
+            raise serializers.ValidationError(
+                "Client does not belong to your organization.",
+            )
+
+        return client
 
     def validate(self, attrs):
         work_mode = attrs.get(

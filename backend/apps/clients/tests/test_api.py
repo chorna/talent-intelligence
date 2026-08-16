@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase
 
 from apps.clients.choices import ClientStatus
 from apps.clients.models import Client, ClientContact
+from apps.jobs.models import Job
 from apps.organizations.models import Organization
 from apps.users.models import User
 
@@ -21,6 +22,7 @@ class ClientViewSetTests(APITestCase):
             password="password123",
             organization=self.organization,
         )
+
         self.other_recruiter = User.objects.create_user(
             email="other@example.com",
             password="password123",
@@ -363,6 +365,49 @@ class ClientViewSetTests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_201_CREATED,
+        )
+
+    def test_list_client_jobs(self):
+        client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        Job.objects.create(
+            organization=self.organization,
+            client=client_obj,
+            created_by=self.recruiter,
+            title="Senior Python Developer",
+            # demás campos requeridos
+        )
+
+        response = self.client.get(
+            f"{self.url}{client_obj.id}/jobs/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+    def test_cannot_list_jobs_from_other_organization_client(self):
+        other_client = Client.objects.create(
+            organization=self.other_organization,
+            name="Other Client",
+        )
+
+        response = self.client.get(
+            f"{self.url}{other_client.id}/jobs/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
         )
 
 

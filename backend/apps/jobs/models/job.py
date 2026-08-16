@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from apps.clients.models import Client
 from apps.core.models.base import BaseModel
 from apps.jobs.choices import EmploymentType, JobStatus, WorkMode
 from apps.locations.models import City
@@ -15,6 +16,13 @@ class Job(BaseModel):
         on_delete=models.CASCADE,
         related_name="jobs",
         null=True,
+    )
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.PROTECT,
+        related_name="jobs",
+        null=True,
+        blank=True,
     )
     title = models.CharField(max_length=255)
     description = models.TextField()

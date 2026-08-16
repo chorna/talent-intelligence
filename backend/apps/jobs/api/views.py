@@ -46,6 +46,7 @@ class JobViewSet(ModelViewSet):
                 "organization",
                 "created_by",
                 "city",
+                "client",
             )
             .prefetch_related(
                 "job_skills__skill",
@@ -118,6 +119,13 @@ class JobViewSet(ModelViewSet):
             organization=self.request.user.organization,
             created_by=self.request.user,
         )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+
+        context["organization"] = self.request.user.organization
+
+        return context
 
     @action(
         detail=True,

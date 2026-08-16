@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.candidates.models import Candidate
+from apps.clients.models import Client
 from apps.jobs.choices import (
     ApplicationStatus,
     EmploymentType,
@@ -2068,4 +2069,71 @@ class JobViewSetTests(APITestCase):
         self.assertEqual(
             response.data["metrics"]["rejected_rate"],
             0,
+        )
+
+    def test_create_job_with_client(self):
+        client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        data = {
+            "title": "Python Developer",
+            "description": "Backend developer.",
+            "client": str(client_obj.id),
+            "city": str(self.lima.id),
+            "employment_type": EmploymentType.FULL_TIME,
+            "work_mode": WorkMode.HYBRID,
+            "status": JobStatus.OPEN,
+        }
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        job = Job.objects.get(
+            id=response.data["id"],
+        )
+
+        self.assertEqual(
+            job.client,
+            client_obj,
+        )
+
+        self.assertEqual(
+            job.created_by,
+            self.recruiter,
+        )
+
+    def test_cannot_create_job_with_client_from_other_organization(self):
+        other_client = Client.objects.create(
+            organization=self.other_organization,
+            name="Other Client",
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "title": "Senior Python Developer",
+                "client": str(other_client.id),
+                # demás campos requeridos
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "client",
+            response.data,
         )
