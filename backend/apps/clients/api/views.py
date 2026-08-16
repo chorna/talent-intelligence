@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,12 +8,15 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.clients.api.serializers import (
     ClientContactSerializer,
+    ClientDashboardSerializer,
     ClientSerializer,
 )
 from apps.clients.models import Client
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
 from apps.jobs.api.serializers import JobSerializer
+from apps.jobs.choices import ApplicationStatus, JobStatus
+from apps.jobs.models import Application
 
 
 @extend_schema(tags=["Clients"])
@@ -135,3 +138,84 @@ class ClientViewSet(ModelViewSet):
         return Response(
             serializer.data,
         )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="dashboard",
+    )
+    def dashboard(self, request, pk=None):
+        client = self.get_object()
+
+        jobs = client.jobs.all()
+
+        job_summary = jobs.aggregate(
+            total=Count("id"),
+            active=Count(
+                "id",
+                filter=Q(status=JobStatus.OPEN),
+            ),
+        )
+
+        applications = Application.objects.filter(
+            job__client=client,
+        )
+
+        application_summary = applications.aggregate(
+            total=Count("id"),
+            applied=Count(
+                "id",
+                filter=Q(
+                    status=ApplicationStatus.APPLIED,
+                ),
+            ),
+            screening=Count(
+                "id",
+                filter=Q(
+                    status=ApplicationStatus.SCREENING,
+                ),
+            ),
+            interview=Count(
+                "id",
+                filter=Q(
+                    status=ApplicationStatus.INTERVIEW,
+                ),
+            ),
+            offer=Count(
+                "id",
+                filter=Q(
+                    status=ApplicationStatus.OFFER,
+                ),
+            ),
+            hired=Count(
+                "id",
+                filter=Q(
+                    status=ApplicationStatus.HIRED,
+                ),
+            ),
+            rejected=Count(
+                "id",
+                filter=Q(
+                    status=ApplicationStatus.REJECTED,
+                ),
+            ),
+        )
+
+        data = {
+            "client": client,
+            "total_jobs": job_summary["total"],
+            "active_jobs": job_summary["active"],
+            "total_applications": application_summary["total"],
+            "pipeline": {
+                ApplicationStatus.APPLIED: application_summary["applied"],
+                ApplicationStatus.SCREENING: application_summary["screening"],
+                ApplicationStatus.INTERVIEW: application_summary["interview"],
+                ApplicationStatus.OFFER: application_summary["offer"],
+                ApplicationStatus.HIRED: application_summary["hired"],
+                ApplicationStatus.REJECTED: application_summary["rejected"],
+            },
+        }
+
+        serializer = ClientDashboardSerializer(data)
+
+        return Response(serializer.data)

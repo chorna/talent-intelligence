@@ -477,7 +477,12 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [ ] Client status
 - [ ] Client notes
 - [x] Client search / filtering
+- [x] Client ordering
+- [x] Client pagination
 - [x] Client isolation by organization
+- [x] Client dashboard
+- [x] Client job metrics
+- [x] Client application metrics
 
 ---
 
@@ -494,7 +499,9 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Job search / filtering
 - [x] Job ordering
 - [x] Organization job isolation
-- [ ] Client ↔ Job relationship
+- [x] Client ↔ Job relationship
+- [x] Client job listing
+- [x] Client organization validation
 
 ---
 
@@ -518,20 +525,6 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [ ] Interview tracking
 - [ ] Offer tracking
 - [ ] Placement tracking
-
----
-
-### AI & Intelligence
-
-- [ ] AI Skill Extractor
-- [ ] Candidate profile enrichment
-- [ ] Embeddings
-- [ ] Semantic Candidate Search
-- [ ] Job ↔ Candidate matching
-- [ ] Candidate ranking / scoring
-- [ ] Match explanation
-- [ ] Similar candidate search
-- [ ] Recruiter Chat
 
 ---
 
@@ -569,6 +562,20 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [ ] Reject candidate
 - [ ] Request interview
 - [ ] Client feedback
+
+---
+
+### AI & Intelligence
+
+- [ ] AI Skill Extractor
+- [ ] Candidate profile enrichment
+- [ ] Embeddings
+- [ ] Semantic Candidate Search
+- [ ] Job ↔ Candidate matching
+- [ ] Candidate ranking / scoring
+- [ ] Match explanation
+- [ ] Similar candidate search
+- [ ] Recruiter Chat
 
 ---
 

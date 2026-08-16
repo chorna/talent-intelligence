@@ -1,9 +1,16 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.candidates.models import Candidate
 from apps.clients.choices import ClientStatus
 from apps.clients.models import Client, ClientContact
-from apps.jobs.models import Job
+from apps.jobs.choices import (
+    ApplicationStatus,
+    EmploymentType,
+    JobStatus,
+    WorkMode,
+)
+from apps.jobs.models import Application, Job
 from apps.organizations.models import Organization
 from apps.users.models import User
 
@@ -455,6 +462,251 @@ class ClientViewSetTests(APITestCase):
         self.assertEqual(
             response.data["results"][0]["name"],
             "ACME Active",
+        )
+
+    def test_client_dashboard_returns_zero_values(self):
+        client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        response = self.client.get(
+            f"{self.url}{client_obj.id}/dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_jobs"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["active_jobs"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            0,
+        )
+
+        for status_value, _ in ApplicationStatus.choices:
+            self.assertEqual(
+                response.data["pipeline"][status_value],
+                0,
+            )
+
+    def test_client_dashboard_returns_job_metrics(self):
+        client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        Job.objects.create(
+            client=client_obj,
+            title="Backend Engineer",
+            description="Python / Django",
+            status=JobStatus.OPEN,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        Job.objects.create(
+            client=client_obj,
+            title="Frontend Engineer",
+            description="Vue",
+            status=JobStatus.CLOSED,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{client_obj.id}/dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_jobs"],
+            2,
+        )
+
+        self.assertEqual(
+            response.data["active_jobs"],
+            1,
+        )
+
+    def test_client_dashboard_returns_application_pipeline(self):
+        client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        job = Job.objects.create(
+            client=client_obj,
+            title="Backend Engineer",
+            description="Python / Django",
+            status=JobStatus.OPEN,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        candidate = Candidate.objects.create(
+            first_name="Christian",
+            last_name="Horna",
+            email="christian@example.com",
+        )
+
+        Application.objects.create(
+            candidate=candidate,
+            job=job,
+            status=ApplicationStatus.APPLIED,
+        )
+
+        Application.objects.create(
+            candidate=Candidate.objects.create(
+                first_name="John",
+                last_name="Doe",
+                email="john@example.com",
+            ),
+            job=job,
+            status=ApplicationStatus.INTERVIEW,
+        )
+
+        Application.objects.create(
+            candidate=Candidate.objects.create(
+                first_name="Jane",
+                last_name="Doe",
+                email="jane@example.com",
+            ),
+            job=job,
+            status=ApplicationStatus.HIRED,
+        )
+
+        response = self.client.get(
+            f"{self.url}{client_obj.id}/dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            3,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"][ApplicationStatus.APPLIED],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"][ApplicationStatus.INTERVIEW],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"][ApplicationStatus.HIRED],
+            1,
+        )
+
+    def test_client_dashboard_isolated_by_organization(self):
+        other_client = Client.objects.create(
+            organization=self.other_organization,
+            name="Other Client",
+        )
+
+        response = self.client.get(
+            f"{self.url}{other_client.id}/dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_client_dashboard_does_not_include_other_client_applications(self):
+        client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        other_client = Client.objects.create(
+            organization=self.organization,
+            name="Other Client",
+        )
+
+        Job.objects.create(
+            client=client_obj,
+            title="Backend Engineer",
+            description="Python / Django",
+            status=JobStatus.OPEN,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        other_job = Job.objects.create(
+            client=other_client,
+            title="Another Backend Engineer",
+            description="Python",
+            status=JobStatus.OPEN,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.REMOTE,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        candidate = Candidate.objects.create(
+            first_name="Christian",
+            last_name="Horna",
+            email="christian@example.com",
+        )
+
+        Application.objects.create(
+            candidate=candidate,
+            job=other_job,
+            status=ApplicationStatus.HIRED,
+        )
+
+        response = self.client.get(
+            f"{self.url}{client_obj.id}/dashboard/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["total_jobs"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["total_applications"],
+            0,
+        )
+
+        self.assertEqual(
+            response.data["pipeline"][ApplicationStatus.HIRED],
+            0,
         )
 
 

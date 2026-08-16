@@ -74,3 +74,19 @@ class ClientSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+
+
+class ClientDashboardSerializer(serializers.Serializer):
+    client = serializers.SerializerMethodField()
+    total_jobs = serializers.IntegerField()
+    active_jobs = serializers.IntegerField()
+    total_applications = serializers.IntegerField()
+    pipeline = serializers.DictField()
+
+    def get_client(self, obj):
+        client = obj["client"]
+
+        return {
+            "id": str(client.id),
+            "name": client.name,
+        }
