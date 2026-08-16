@@ -63,6 +63,7 @@ LOCAL_APPS = [
     "apps.education",
     "apps.locations",
     "apps.jobs",
+    "apps.clients",
 ]
 
 AUTH_USER_MODEL = "users.User"
