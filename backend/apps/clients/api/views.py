@@ -9,6 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 from apps.clients.api.serializers import (
     ClientContactSerializer,
     ClientDashboardSerializer,
+    ClientNoteSerializer,
     ClientSerializer,
 )
 from apps.clients.models import Client
@@ -219,3 +220,44 @@ class ClientViewSet(ModelViewSet):
         serializer = ClientDashboardSerializer(data)
 
         return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="notes",
+    )
+    def notes(self, request, pk=None):
+        client = self.get_object()
+
+        notes = client.notes.select_related(
+            "author",
+        )
+
+        serializer = ClientNoteSerializer(
+            notes,
+            many=True,
+        )
+
+        return Response(serializer.data)
+
+    @notes.mapping.post
+    def create_note(self, request, pk=None):
+        client = self.get_object()
+
+        serializer = ClientNoteSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        note = serializer.save(
+            client=client,
+            author=request.user,
+        )
+
+        return Response(
+            ClientNoteSerializer(note).data,
+            status=status.HTTP_201_CREATED,
+        )

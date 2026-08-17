@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 
 from apps.candidates.models import Candidate
 from apps.clients.choices import ClientStatus
-from apps.clients.models import Client, ClientContact
+from apps.clients.models import Client, ClientContact, ClientNote
 from apps.jobs.choices import (
     ApplicationStatus,
     EmploymentType,
@@ -707,6 +707,260 @@ class ClientViewSetTests(APITestCase):
         self.assertEqual(
             response.data["pipeline"][ApplicationStatus.HIRED],
             0,
+        )
+
+    def test_client_status_defaults_to_active(self):
+        client = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        self.assertEqual(
+            client.status,
+            ClientStatus.ACTIVE,
+        )
+
+    def test_recruiter_can_update_client_status(self):
+        client = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        response = self.client.patch(
+            f"{self.url}{client.id}/",
+            {
+                "status": ClientStatus.INACTIVE,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        client.refresh_from_db()
+
+        self.assertEqual(
+            client.status,
+            ClientStatus.INACTIVE,
+        )
+
+    def test_recruiter_can_filter_clients_by_status(self):
+        Client.objects.create(
+            organization=self.organization,
+            name="Active Client",
+            status=ClientStatus.ACTIVE,
+        )
+
+        Client.objects.create(
+            organization=self.organization,
+            name="Inactive Client",
+            status=ClientStatus.INACTIVE,
+        )
+
+        response = self.client.get(
+            self.url,
+            {
+                "status": ClientStatus.INACTIVE,
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["count"],
+            1,
+        )
+
+        self.assertEqual(
+            response.data["results"][0]["name"],
+            "Inactive Client",
+        )
+
+    def test_recruiter_can_list_client_notes(self):
+        client = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        ClientNote.objects.create(
+            client=client,
+            author=self.recruiter,
+            content="Initial contact with the client.",
+        )
+
+        ClientNote.objects.create(
+            client=client,
+            author=self.recruiter,
+            content="Client requested three candidates.",
+        )
+
+        response = self.client.get(
+            f"{self.url}{client.id}/notes/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            2,
+        )
+
+        self.assertEqual(
+            response.data[0]["author"],
+            self.recruiter.email,
+        )
+
+        self.assertEqual(
+            response.data[0]["content"],
+            "Client requested three candidates.",
+        )
+
+    def test_recruiter_can_create_client_note(self):
+        client = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        response = self.client.post(
+            f"{self.url}{client.id}/notes/",
+            {
+                "content": "Client needs a Senior Backend Engineer.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        note = ClientNote.objects.get(
+            pk=response.data["id"],
+        )
+
+        self.assertEqual(
+            note.client,
+            client,
+        )
+
+        self.assertEqual(
+            note.author,
+            self.recruiter,
+        )
+
+        self.assertEqual(
+            note.content,
+            "Client needs a Senior Backend Engineer.",
+        )
+
+    def test_client_note_author_is_current_user(self):
+        client = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        response = self.client.post(
+            f"{self.url}{client.id}/notes/",
+            {
+                "content": "Follow up next week.",
+                "author": str(self.other_recruiter.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        note = ClientNote.objects.get(
+            pk=response.data["id"],
+        )
+
+        self.assertEqual(
+            note.author,
+            self.recruiter,
+        )
+
+    def test_recruiter_cannot_list_notes_from_other_organization_client(
+        self,
+    ):
+        client = Client.objects.create(
+            organization=self.other_organization,
+            name="Other Client",
+        )
+
+        ClientNote.objects.create(
+            client=client,
+            author=self.other_recruiter,
+            content="Private client note.",
+        )
+
+        response = self.client.get(
+            f"{self.url}{client.id}/notes/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_recruiter_cannot_create_note_for_other_organization_client(
+        self,
+    ):
+        client = Client.objects.create(
+            organization=self.other_organization,
+            name="Other Client",
+        )
+
+        response = self.client.post(
+            f"{self.url}{client.id}/notes/",
+            {
+                "content": "This should not be allowed.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            ClientNote.objects.filter(
+                client=client,
+                content="This should not be allowed.",
+            ).exists(),
+        )
+
+    def test_cannot_create_client_note_without_content(self):
+        client = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        response = self.client.post(
+            f"{self.url}{client.id}/notes/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "content",
+            response.data,
         )
 
 

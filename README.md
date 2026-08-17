@@ -474,8 +474,8 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Client management
 - [x] Client contacts
 - [x] Client ↔ Organization relationship
-- [ ] Client status
-- [ ] Client notes
+- [x] Client status
+- [x] Client notes
 - [x] Client search / filtering
 - [x] Client ordering
 - [x] Client pagination

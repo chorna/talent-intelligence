@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.clients.models import Client, ClientContact
+from apps.clients.models import Client, ClientContact, ClientNote
 
 
 class ClientContactSerializer(serializers.ModelSerializer):
@@ -90,3 +90,26 @@ class ClientDashboardSerializer(serializers.Serializer):
             "id": str(client.id),
             "name": client.name,
         }
+
+
+class ClientNoteSerializer(serializers.ModelSerializer):
+    author = serializers.EmailField(
+        source="author.email",
+        read_only=True,
+    )
+
+    class Meta:
+        model = ClientNote
+        fields = [
+            "id",
+            "author",
+            "content",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "author",
+            "created_at",
+            "updated_at",
+        ]
