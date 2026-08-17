@@ -10,7 +10,7 @@ from apps.jobs.choices import (
     JobStatus,
     WorkMode,
 )
-from apps.jobs.models import Application, Job, JobSkill
+from apps.jobs.models import Application, CandidateShortlist, Job, JobSkill
 from apps.locations.models import City, Country
 from apps.organizations.models import Organization
 from apps.skills.models import Skill
@@ -2136,4 +2136,364 @@ class JobViewSetTests(APITestCase):
         self.assertIn(
             "client",
             response.data,
+        )
+
+    def test_list_job_shortlist(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+            notes="Strong Python and Django experience.",
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/shortlist/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        item = response.data[0]
+
+        self.assertEqual(
+            str(item["candidate"]),
+            str(self.candidate.id),
+        )
+
+        self.assertEqual(
+            item["notes"],
+            "Strong Python and Django experience.",
+        )
+
+    def test_add_candidate_to_shortlist(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "candidate": str(self.candidate.id),
+                "notes": "Strong Python and Django experience.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        shortlist = CandidateShortlist.objects.get(
+            pk=response.data["id"],
+        )
+
+        self.assertEqual(
+            shortlist.job,
+            self.job,
+        )
+
+        self.assertEqual(
+            shortlist.candidate,
+            self.candidate,
+        )
+
+        self.assertEqual(
+            shortlist.created_by,
+            self.recruiter,
+        )
+
+        self.assertEqual(
+            shortlist.notes,
+            "Strong Python and Django experience.",
+        )
+
+    def test_add_candidate_to_shortlist_without_notes(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        shortlist = CandidateShortlist.objects.get(
+            pk=response.data["id"],
+        )
+
+        self.assertEqual(
+            shortlist.notes,
+            "",
+        )
+
+    def test_add_candidate_to_shortlist_requires_candidate(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "notes": "Candidate without ID.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "candidate",
+            response.data,
+        )
+
+    def test_add_nonexistent_candidate_to_shortlist(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "candidate": "00000000-0000-0000-0000-000000000000",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "candidate",
+            response.data,
+        )
+
+    def test_cannot_add_same_candidate_twice_to_shortlist(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "candidate",
+            response.data,
+        )
+
+    def test_candidate_can_be_shortlisted_for_different_jobs(self):
+        second_job = Job.objects.create(
+            title="Python Developer",
+            description="Another position.",
+            city=self.lima,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.post(
+            f"{self.url}{second_job.id}/shortlist/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            CandidateShortlist.objects.filter(
+                candidate=self.candidate,
+            ).count(),
+            2,
+        )
+
+    def test_different_candidates_can_be_shortlisted_for_same_job(self):
+        second_candidate = Candidate.objects.create(
+            first_name="Juan",
+            last_name="Perez",
+            email="juan@example.com",
+            city=self.lima,
+            headline="Python Developer",
+            summary="Python developer.",
+        )
+
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "candidate": str(second_candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            CandidateShortlist.objects.filter(
+                job=self.job,
+            ).count(),
+            2,
+        )
+
+    def test_cannot_list_shortlist_from_other_organization_job(self):
+        response = self.client.get(
+            f"{self.url}{self.other_job.id}/shortlist/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_cannot_add_candidate_to_other_organization_job(self):
+        response = self.client.post(
+            f"{self.url}{self.other_job.id}/shortlist/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_other_organization_recruiter_cannot_access_job_shortlist(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.client.force_authenticate(
+            user=self.other_recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/shortlist/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_other_organization_recruiter_cannot_add_to_job_shortlist(self):
+        self.client.force_authenticate(
+            user=self.other_recruiter,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/shortlist/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_remove_candidate_from_shortlist(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.job.id}/shortlist/{shortlist.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            CandidateShortlist.objects.filter(
+                pk=shortlist.id,
+            ).exists(),
+        )
+
+    def test_cannot_remove_shortlist_from_different_job(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        second_job = Job.objects.create(
+            title="Another Python Developer",
+            description="Another position.",
+            city=self.lima,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{second_job.id}/shortlist/{shortlist.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertTrue(
+            CandidateShortlist.objects.filter(
+                pk=shortlist.id,
+            ).exists(),
+        )
+
+    def test_remove_nonexistent_shortlist_returns_404(self):
+        response = self.client.delete(
+            f"{self.url}{self.job.id}/shortlist/00000000-0000-0000-0000-000000000000/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
         )

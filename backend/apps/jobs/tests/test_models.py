@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.db.models import ProtectedError
 from django.test import TestCase
 
 from apps.candidates.models import Candidate
@@ -11,6 +12,7 @@ from apps.jobs.choices import (
 )
 from apps.jobs.models import (
     Application,
+    CandidateShortlist,
     Job,
     JobSkill,
 )
@@ -508,3 +510,306 @@ class JobSkillModelTests(TestCase):
         self.assertFalse(
             job_skill.is_required,
         )
+
+
+class CandidateShortlistModelTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name="Talent Agency",
+        )
+
+        self.recruiter = User.objects.create_user(
+            email="recruiter@example.com",
+            password="password123",
+            organization=self.organization,
+        )
+
+        self.country = Country.objects.create(
+            name="Peru",
+            code="PE",
+        )
+
+        self.city = City.objects.create(
+            country=self.country,
+            name="Lima",
+        )
+
+        self.job = Job.objects.create(
+            title="Senior Backend Engineer",
+            description="Python and Django backend engineer.",
+            city=self.city,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        self.candidate = Candidate.objects.create(
+            first_name="Christian",
+            last_name="Horna",
+            email="christian@example.com",
+            city=self.city,
+            headline="Senior Backend Engineer",
+            summary="Python and Django specialist.",
+        )
+
+    def test_create_candidate_shortlist(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertIsNotNone(
+            shortlist.id,
+        )
+
+        self.assertEqual(
+            shortlist.job,
+            self.job,
+        )
+
+        self.assertEqual(
+            shortlist.candidate,
+            self.candidate,
+        )
+
+        self.assertEqual(
+            shortlist.created_by,
+            self.recruiter,
+        )
+
+        self.assertEqual(
+            shortlist.notes,
+            "",
+        )
+
+    def test_create_candidate_shortlist_with_notes(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+            notes="Strong Python and Django experience.",
+        )
+
+        self.assertEqual(
+            shortlist.notes,
+            "Strong Python and Django experience.",
+        )
+
+    def test_candidate_shortlist_str(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertEqual(
+            str(shortlist),
+            f"{self.candidate} - {self.job}",
+        )
+
+    def test_candidate_cannot_be_shortlisted_twice_for_same_job(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        with self.assertRaises(
+            IntegrityError,
+        ):
+            CandidateShortlist.objects.create(
+                job=self.job,
+                candidate=self.candidate,
+                created_by=self.recruiter,
+            )
+
+    def test_candidate_can_be_shortlisted_for_different_jobs(self):
+        second_job = Job.objects.create(
+            title="Python Developer",
+            description="Another Python position.",
+            city=self.city,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            organization=self.organization,
+            created_by=self.recruiter,
+        )
+
+        first_shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        second_shortlist = CandidateShortlist.objects.create(
+            job=second_job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertNotEqual(
+            first_shortlist.id,
+            second_shortlist.id,
+        )
+
+        self.assertEqual(
+            CandidateShortlist.objects.filter(
+                candidate=self.candidate,
+            ).count(),
+            2,
+        )
+
+    def test_different_candidates_can_be_shortlisted_for_same_job(self):
+        second_candidate = Candidate.objects.create(
+            first_name="Juan",
+            last_name="Perez",
+            email="juan@example.com",
+            city=self.city,
+            headline="Python Developer",
+            summary="Python developer.",
+        )
+
+        first_shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        second_shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=second_candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertNotEqual(
+            first_shortlist.id,
+            second_shortlist.id,
+        )
+
+        self.assertEqual(
+            CandidateShortlist.objects.filter(
+                job=self.job,
+            ).count(),
+            2,
+        )
+
+    def test_shortlist_ordering_by_created_at(self):
+        first_shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        second_candidate = Candidate.objects.create(
+            first_name="Juan",
+            last_name="Perez",
+            email="juan@example.com",
+            city=self.city,
+        )
+
+        second_shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=second_candidate,
+            created_by=self.recruiter,
+        )
+
+        shortlist = list(
+            CandidateShortlist.objects.filter(
+                job=self.job,
+            ),
+        )
+
+        self.assertEqual(
+            shortlist[0],
+            first_shortlist,
+        )
+
+        self.assertEqual(
+            shortlist[1],
+            second_shortlist,
+        )
+
+    def test_shortlist_belongs_to_job(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertIn(
+            shortlist,
+            self.job.shortlist.all(),
+        )
+
+    def test_candidate_has_shortlist_relationship(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertIn(
+            shortlist,
+            self.candidate.shortlists.all(),
+        )
+
+    def test_recruiter_has_shortlist_relationship(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        self.assertIn(
+            shortlist,
+            self.recruiter.candidate_shortlists.all(),
+        )
+
+    def test_delete_job_deletes_shortlist(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        shortlist_id = shortlist.id
+
+        self.job.delete()
+
+        self.assertFalse(
+            CandidateShortlist.objects.filter(
+                id=shortlist_id,
+            ).exists(),
+        )
+
+    def test_delete_candidate_deletes_shortlist(self):
+        shortlist = CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        shortlist_id = shortlist.id
+
+        self.candidate.delete()
+
+        self.assertFalse(
+            CandidateShortlist.objects.filter(
+                id=shortlist_id,
+            ).exists(),
+        )
+
+    def test_delete_recruiter_is_protected(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        with self.assertRaises(
+            ProtectedError,
+        ):
+            self.recruiter.delete()

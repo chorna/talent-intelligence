@@ -11,11 +11,12 @@ from rest_framework.viewsets import ModelViewSet
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
 from apps.jobs.choices import ApplicationStatus, JobStatus
-from apps.jobs.models import Application, Job, JobSkill
+from apps.jobs.models import Application, CandidateShortlist, Job, JobSkill
 
 from .serializers import (
     ApplicationSerializer,
     ApplicationStatusHistorySerializer,
+    CandidateShortlistSerializer,
     JobSerializer,
     JobSkillSerializer,
 )
@@ -523,4 +524,75 @@ class JobViewSet(ModelViewSet):
                 },
             },
             status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="shortlist",
+    )
+    def shortlist(self, request, pk=None):
+        job = self.get_object()
+
+        shortlist = job.shortlist.select_related(
+            "candidate",
+            "created_by",
+        )
+
+        serializer = CandidateShortlistSerializer(
+            shortlist,
+            many=True,
+        )
+
+        return Response(serializer.data)
+
+    @shortlist.mapping.post
+    def create_shortlist_candidate(self, request, pk=None):
+        job = self.get_object()
+
+        serializer = CandidateShortlistSerializer(
+            data=request.data,
+            context={
+                "request": request,
+                "job": job,
+            },
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        shortlist = serializer.save(
+            job=job,
+            created_by=request.user,
+        )
+
+        return Response(
+            CandidateShortlistSerializer(shortlist).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r"shortlist/(?P<shortlist_id>[^/.]+)",
+    )
+    def remove_from_shortlist(
+        self,
+        request,
+        pk=None,
+        shortlist_id=None,
+    ):
+        job = self.get_object()
+
+        shortlist = get_object_or_404(
+            CandidateShortlist,
+            id=shortlist_id,
+            job=job,
+        )
+
+        shortlist.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
         )
