@@ -29,3 +29,13 @@ class ApplicationStatus(models.TextChoices):
     OFFER = "offer", "Offer"
     HIRED = "hired", "Hired"
     REJECTED = "rejected", "Rejected"
+
+
+class SubmissionStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+    INTERVIEW_REQUESTED = (
+        "interview_requested",
+        "Interview requested",
+    )

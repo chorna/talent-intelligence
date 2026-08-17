@@ -11,12 +11,19 @@ from rest_framework.viewsets import ModelViewSet
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
 from apps.jobs.choices import ApplicationStatus, JobStatus
-from apps.jobs.models import Application, CandidateShortlist, Job, JobSkill
+from apps.jobs.models import (
+    Application,
+    CandidateShortlist,
+    CandidateSubmission,
+    Job,
+    JobSkill,
+)
 
 from .serializers import (
     ApplicationSerializer,
     ApplicationStatusHistorySerializer,
     CandidateShortlistSerializer,
+    CandidateSubmissionSerializer,
     JobSerializer,
     JobSkillSerializer,
 )
@@ -592,6 +599,79 @@ class JobViewSet(ModelViewSet):
         )
 
         shortlist.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="submissions",
+    )
+    def submissions(self, request, pk=None):
+        job = self.get_object()
+
+        submissions = job.submissions.select_related(
+            "candidate",
+            "client",
+            "submitted_by",
+        )
+
+        serializer = CandidateSubmissionSerializer(
+            submissions,
+            many=True,
+        )
+
+        return Response(serializer.data)
+
+    @submissions.mapping.post
+    def create_submission(self, request, pk=None):
+        job = self.get_object()
+
+        serializer = CandidateSubmissionSerializer(
+            data=request.data,
+            context={
+                "request": request,
+                "job": job,
+            },
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        submission = serializer.save(
+            job=job,
+            client=job.client,
+            submitted_by=request.user,
+        )
+
+        return Response(
+            CandidateSubmissionSerializer(submission).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r"submissions/(?P<submission_id>[^/.]+)",
+    )
+    def remove_submission(
+        self,
+        request,
+        pk=None,
+        submission_id=None,
+    ):
+        job = self.get_object()
+
+        submission = get_object_or_404(
+            CandidateSubmission,
+            id=submission_id,
+            job=job,
+        )
+
+        submission.delete()
 
         return Response(
             status=status.HTTP_204_NO_CONTENT,

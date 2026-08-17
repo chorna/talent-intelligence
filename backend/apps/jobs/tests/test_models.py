@@ -4,15 +4,18 @@ from django.db.models import ProtectedError
 from django.test import TestCase
 
 from apps.candidates.models import Candidate
+from apps.clients.models import Client
 from apps.jobs.choices import (
     ApplicationStatus,
     EmploymentType,
     JobStatus,
+    SubmissionStatus,
     WorkMode,
 )
 from apps.jobs.models import (
     Application,
     CandidateShortlist,
+    CandidateSubmission,
     Job,
     JobSkill,
 )
@@ -813,3 +816,165 @@ class CandidateShortlistModelTests(TestCase):
             ProtectedError,
         ):
             self.recruiter.delete()
+
+
+class CandidateSubmissionModelTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name="Talent Agency",
+        )
+
+        self.recruiter = User.objects.create_user(
+            email="recruiter@example.com",
+            password="password123",
+            organization=self.organization,
+        )
+
+        self.city = City.objects.create(
+            country=Country.objects.create(
+                name="Peru",
+                code="PE",
+            ),
+            name="Lima",
+        )
+
+        self.client_obj = Client.objects.create(
+            organization=self.organization,
+            name="ACME",
+        )
+
+        self.job = Job.objects.create(
+            organization=self.organization,
+            client=self.client_obj,
+            title="Backend Engineer",
+            description="Python backend position.",
+            city=self.city,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            created_by=self.recruiter,
+        )
+
+        self.candidate = Candidate.objects.create(
+            first_name="Christian",
+            last_name="Horna",
+            email="christian@example.com",
+            city=self.city,
+        )
+
+    def test_create_submission(self):
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+            notes="Strong backend profile.",
+        )
+
+        self.assertEqual(
+            submission.status,
+            SubmissionStatus.PENDING,
+        )
+        self.assertEqual(
+            submission.job,
+            self.job,
+        )
+        self.assertEqual(
+            submission.candidate,
+            self.candidate,
+        )
+        self.assertEqual(
+            submission.client,
+            self.client_obj,
+        )
+        self.assertEqual(
+            submission.submitted_by,
+            self.recruiter,
+        )
+
+    def test_default_status_is_pending(self):
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+        )
+
+        self.assertEqual(
+            submission.status,
+            SubmissionStatus.PENDING,
+        )
+
+    def test_notes_are_optional(self):
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+        )
+
+        self.assertEqual(
+            submission.notes,
+            "",
+        )
+
+    def test_candidate_cannot_be_submitted_twice_for_same_job(self):
+        CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+        )
+
+        with self.assertRaises(IntegrityError):
+            CandidateSubmission.objects.create(
+                job=self.job,
+                candidate=self.candidate,
+                client=self.client_obj,
+                submitted_by=self.recruiter,
+            )
+
+    def test_same_candidate_can_be_submitted_for_different_jobs(self):
+        second_job = Job.objects.create(
+            organization=self.organization,
+            client=self.client_obj,
+            title="Senior Python Engineer",
+            description="Another position.",
+            city=self.city,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            created_by=self.recruiter,
+        )
+
+        CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+        )
+
+        submission = CandidateSubmission.objects.create(
+            job=second_job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+        )
+
+        self.assertEqual(
+            submission.job,
+            second_job,
+        )
+
+    def test_str(self):
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.client_obj,
+            submitted_by=self.recruiter,
+        )
+
+        self.assertEqual(
+            str(submission),
+            f"{self.candidate} - {self.job}",
+        )

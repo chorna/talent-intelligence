@@ -8,9 +8,16 @@ from apps.jobs.choices import (
     ApplicationStatus,
     EmploymentType,
     JobStatus,
+    SubmissionStatus,
     WorkMode,
 )
-from apps.jobs.models import Application, CandidateShortlist, Job, JobSkill
+from apps.jobs.models import (
+    Application,
+    CandidateShortlist,
+    CandidateSubmission,
+    Job,
+    JobSkill,
+)
 from apps.locations.models import City, Country
 from apps.organizations.models import Organization
 from apps.skills.models import Skill
@@ -82,6 +89,11 @@ class JobViewSetTests(APITestCase):
             name="Bogota",
         )
 
+        self.client_obj = Client.objects.create(
+            organization=self.organization,
+            name="SONY",
+        )
+
         self.job = Job.objects.create(
             title="Senior Backend Engineer",
             description="Python and Django backend engineer.",
@@ -90,6 +102,7 @@ class JobViewSetTests(APITestCase):
             work_mode=WorkMode.HYBRID,
             status=JobStatus.OPEN,
             organization=self.organization,
+            client=self.client_obj,
             created_by=self.recruiter,
         )
 
@@ -2496,4 +2509,220 @@ class JobViewSetTests(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_add_candidate_submission(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/",
+            {
+                "candidate": str(self.candidate.id),
+                "notes": "Strong backend candidate.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        submission = CandidateSubmission.objects.get(
+            pk=response.data["id"],
+        )
+
+        self.assertEqual(
+            submission.job,
+            self.job,
+        )
+
+        self.assertEqual(
+            submission.candidate,
+            self.candidate,
+        )
+
+        self.assertEqual(
+            submission.client,
+            self.job.client,
+        )
+
+        self.assertEqual(
+            submission.submitted_by,
+            self.recruiter,
+        )
+
+        self.assertEqual(
+            submission.status,
+            SubmissionStatus.PENDING,
+        )
+
+    def test_cannot_submit_candidate_without_shortlist(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "candidate",
+            response.data,
+        )
+
+    def test_cannot_submit_same_candidate_twice(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.job.client,
+            submitted_by=self.recruiter,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "candidate",
+            response.data,
+        )
+
+    def test_cannot_submit_candidate_to_other_organization_job(self):
+        response = self.client.post(
+            f"{self.url}{self.other_job.id}/submissions/",
+            {
+                "candidate": str(self.candidate.id),
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_list_job_submissions(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.job.client,
+            submitted_by=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/submissions/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            str(response.data[0]["id"]),
+            str(submission.id),
+        )
+
+    def test_cannot_list_submissions_from_other_organization_job(self):
+        response = self.client.get(
+            f"{self.url}{self.other_job.id}/submissions/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_remove_candidate_submission(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.job.client,
+            submitted_by=self.recruiter,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            CandidateSubmission.objects.filter(
+                pk=submission.id,
+            ).exists(),
+        )
+
+    def test_cannot_remove_submission_from_different_job(self):
+        CandidateShortlist.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            created_by=self.recruiter,
+        )
+
+        submission = CandidateSubmission.objects.create(
+            job=self.job,
+            candidate=self.candidate,
+            client=self.job.client,
+            submitted_by=self.recruiter,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.other_job.id}/submissions/{submission.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertTrue(
+            CandidateSubmission.objects.filter(
+                pk=submission.id,
+            ).exists(),
         )
