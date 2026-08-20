@@ -39,3 +39,8 @@ class SubmissionStatus(models.TextChoices):
         "interview_requested",
         "Interview requested",
     )
+
+
+class ClientFeedbackDecision(models.TextChoices):
+    INTERESTED = "interested", "Interested"
+    NOT_INTERESTED = "not_interested", "Not interested"

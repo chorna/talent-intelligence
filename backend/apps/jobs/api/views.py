@@ -15,6 +15,7 @@ from apps.jobs.models import (
     Application,
     CandidateShortlist,
     CandidateSubmission,
+    ClientCandidateFeedback,
     Job,
     JobSkill,
 )
@@ -24,6 +25,7 @@ from .serializers import (
     ApplicationStatusHistorySerializer,
     CandidateShortlistSerializer,
     CandidateSubmissionSerializer,
+    ClientCandidateFeedbackSerializer,
     JobSerializer,
     JobSkillSerializer,
 )
@@ -675,4 +677,109 @@ class JobViewSet(ModelViewSet):
 
         return Response(
             status=status.HTTP_204_NO_CONTENT,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"submissions/(?P<submission_id>[^/.]+)/feedback",
+    )
+    def client_feedback(
+        self,
+        request,
+        pk=None,
+        submission_id=None,
+    ):
+        job = self.get_object()
+
+        submission = get_object_or_404(
+            CandidateSubmission,
+            id=submission_id,
+            job=job,
+        )
+
+        feedback = submission.client_feedback.select_related(
+            "created_by",
+        )
+
+        serializer = ClientCandidateFeedbackSerializer(
+            feedback,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @client_feedback.mapping.post
+    def create_client_feedback(
+        self,
+        request,
+        pk=None,
+        submission_id=None,
+    ):
+        job = self.get_object()
+
+        submission = get_object_or_404(
+            CandidateSubmission,
+            id=submission_id,
+            job=job,
+        )
+
+        serializer = ClientCandidateFeedbackSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        feedback = serializer.save(
+            submission=submission,
+            created_by=request.user,
+        )
+
+        return Response(
+            ClientCandidateFeedbackSerializer(feedback).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @client_feedback.mapping.patch
+    def update_client_feedback(
+        self,
+        request,
+        pk=None,
+        submission_id=None,
+        feedback_id=None,
+    ):
+        job = self.get_object()
+
+        submission = get_object_or_404(
+            CandidateSubmission,
+            id=submission_id,
+            job=job,
+        )
+
+        feedback = get_object_or_404(
+            ClientCandidateFeedback,
+            id=feedback_id,
+            submission=submission,
+        )
+
+        serializer = ClientCandidateFeedbackSerializer(
+            feedback,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        feedback = serializer.save()
+
+        return Response(
+            ClientCandidateFeedbackSerializer(feedback).data,
+            status=status.HTTP_200_OK,
         )

@@ -15,6 +15,7 @@ from apps.jobs.models import (
     Application,
     CandidateShortlist,
     CandidateSubmission,
+    ClientCandidateFeedback,
     Job,
     JobSkill,
 )
@@ -131,6 +132,19 @@ class JobViewSetTests(APITestCase):
         self.django = Skill.objects.create(
             name="Django",
             slug="django",
+        )
+
+    def create_submission(
+        self,
+        *,
+        job=None,
+        candidate=None,
+    ):
+        return CandidateSubmission.objects.create(
+            job=job or self.job,
+            candidate=candidate or self.candidate,
+            client=(job or self.job).client,
+            submitted_by=self.recruiter,
         )
 
     def test_list_jobs(self):
@@ -2724,5 +2738,246 @@ class JobViewSetTests(APITestCase):
         self.assertTrue(
             CandidateSubmission.objects.filter(
                 pk=submission.id,
+            ).exists(),
+        )
+
+    def test_add_client_feedback(self):
+        submission = self.create_submission()
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/feedback/",
+            {
+                "decision": "interested",
+                "comments": "Excellent candidate.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        feedback = ClientCandidateFeedback.objects.get(
+            submission=submission,
+        )
+
+        self.assertEqual(
+            feedback.decision,
+            "interested",
+        )
+
+        self.assertEqual(
+            feedback.comments,
+            "Excellent candidate.",
+        )
+
+        self.assertEqual(
+            feedback.created_by,
+            self.recruiter,
+        )
+
+    def test_add_client_feedback_without_comments(self):
+        submission = self.create_submission()
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/feedback/",
+            {
+                "decision": "interested",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        feedback = ClientCandidateFeedback.objects.get(
+            submission=submission,
+        )
+
+        self.assertEqual(
+            feedback.comments,
+            "",
+        )
+
+    def test_add_not_interested_feedback(self):
+        submission = self.create_submission()
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/feedback/",
+            {
+                "decision": "not_interested",
+                "comments": "The client decided not to continue.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            response.data["decision"],
+            "not_interested",
+        )
+
+    def test_cannot_add_feedback_with_invalid_decision(self):
+        submission = self.create_submission()
+
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/feedback/",
+            {
+                "decision": "maybe",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertIn(
+            "decision",
+            response.data,
+        )
+
+    def test_list_client_feedback(self):
+        submission = self.create_submission()
+
+        ClientCandidateFeedback.objects.create(
+            submission=submission,
+            decision="interested",
+            comments="Good candidate.",
+            created_by=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/feedback/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]["decision"],
+            "interested",
+        )
+
+        self.assertEqual(
+            response.data[0]["comments"],
+            "Good candidate.",
+        )
+
+    def test_list_multiple_client_feedback(self):
+        submission = self.create_submission()
+
+        ClientCandidateFeedback.objects.create(
+            submission=submission,
+            decision="interested",
+            comments="Initial feedback.",
+            created_by=self.recruiter,
+        )
+
+        ClientCandidateFeedback.objects.create(
+            submission=submission,
+            decision="not_interested",
+            comments="Client changed their mind.",
+            created_by=self.recruiter,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.job.id}/submissions/{submission.id}/feedback/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            2,
+        )
+
+    def test_cannot_add_feedback_to_submission_from_other_job(self):
+        submission = self.create_submission(
+            job=self.job,
+        )
+
+        response = self.client.post(
+            f"{self.url}{self.other_job.id}/submissions/{submission.id}/feedback/",
+            {
+                "decision": "interested",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_cannot_list_feedback_from_submission_from_other_job(self):
+        submission = self.create_submission(
+            job=self.job,
+        )
+
+        response = self.client.get(
+            f"{self.url}{self.other_job.id}/submissions/{submission.id}/feedback/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_cannot_add_feedback_to_nonexistent_submission(self):
+        response = self.client.post(
+            f"{self.url}{self.job.id}/submissions/"
+            "00000000-0000-0000-0000-000000000000/feedback/",
+            {
+                "decision": "interested",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_cannot_delete_client_feedback(self):
+        submission = self.create_submission()
+        feedback = ClientCandidateFeedback.objects.create(
+            submission=submission,
+            decision="interested",
+            comments="Initial feedback.",
+            created_by=self.recruiter,
+        )
+
+        response = self.client.delete(
+            f"{self.url}{self.job.id}/submissions/"
+            f"{submission.id}/feedback/{feedback.id}/",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertTrue(
+            ClientCandidateFeedback.objects.filter(
+                id=feedback.id,
             ).exists(),
         )
