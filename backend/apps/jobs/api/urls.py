@@ -3,13 +3,16 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views.application import ApplicationViewSet
-from .views.feedback import FeedbackViewSet
-from .views.interview import InterviewViewSet
-from .views.job import JobViewSet
-from .views.shortlist import ShortlistViewSet
-from .views.skill import JobSkillViewSet
-from .views.submission import SubmissionViewSet
+from .views import (
+    ApplicationViewSet,
+    FeedbackViewSet,
+    InterviewViewSet,
+    JobSkillViewSet,
+    JobViewSet,
+    OfferViewSet,
+    ShortlistViewSet,
+    SubmissionViewSet,
+)
 
 # ------------------------------------------------------------------
 # Jobs
@@ -76,6 +79,13 @@ interview_router.register(
     basename="submission-interview",
 )
 
+offer_router = DefaultRouter()
+
+offer_router.register(
+    "offers",
+    OfferViewSet,
+    basename="submission-offer",
+)
 
 urlpatterns = [
     path(
@@ -105,5 +115,9 @@ urlpatterns = [
     path(
         "jobs/<uuid:job_id>/submissions/<uuid:submission_id>/",
         include(interview_router.urls),
+    ),
+    path(
+        "jobs/<uuid:job_id>/submissions/<uuid:submission_id>/",
+        include(offer_router.urls),
     ),
 ]

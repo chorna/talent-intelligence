@@ -58,6 +58,31 @@ class JobsTestMixin:
             city=self.lima,
         )
 
+        self.other_organization = Organization.objects.create(
+            name="Other Company",
+        )
+
+        self.other_recruiter = User.objects.create_user(
+            email="other-recruiter@example.com",
+            password="testpassword123",
+            organization=self.other_organization,
+        )
+
+        self.other_job = Job.objects.create(
+            title="Other Backend Engineer",
+            description="Other company position.",
+            city=self.lima,
+            employment_type=EmploymentType.FULL_TIME,
+            work_mode=WorkMode.HYBRID,
+            status=JobStatus.OPEN,
+            organization=self.other_organization,
+            client=Client.objects.create(
+                organization=self.other_organization,
+                name="Other Client",
+            ),
+            created_by=self.other_recruiter,
+        )
+
     def create_submission(self):
         return CandidateSubmission.objects.create(
             job=self.job,

@@ -4,9 +4,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.jobs.choices import InterviewStatus
-from apps.jobs.models.interview import Interview
+from apps.jobs.models import Interview
 
-from ..serializers.interview import InterviewSerializer
+from ..serializers import InterviewSerializer
 from .base import JobScopedViewSet
 
 

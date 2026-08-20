@@ -59,3 +59,18 @@ class InterviewType(models.TextChoices):
     CLIENT = "client", "Client"
     FINAL = "final", "Final"
     OTHER = "other", "Other"
+
+
+class OfferStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    SENT = "sent", "Sent"
+    ACCEPTED = "accepted", "Accepted"
+    REJECTED = "rejected", "Rejected"
+    EXPIRED = "expired", "Expired"
+    WITHDRAWN = "withdrawn", "Withdrawn"
+
+
+class Currency(models.TextChoices):
+    PEN = "PEN", "Peruvian Sol"
+    USD = "USD", "US Dollar"
+    EUR = "EUR", "Euro"
