@@ -9,7 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 from apps.candidates.models import Candidate, CandidateFavorite, CandidateNote
 from apps.core.pagination import DefaultPagination
 
-from .serializers import CandidateNoteSerializer, CandidateSerializer
+from ..serializers import CandidateNoteSerializer, CandidateSerializer
 
 
 @extend_schema(tags=["Candidates"])

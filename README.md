@@ -389,9 +389,9 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-## 🗺 Roadmap
+# 🗺 Roadmap
 
-### Foundation
+## Foundation
 
 - [x] Project setup
 - [x] Django backend
@@ -406,7 +406,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Authentication & Users
+## Authentication & Users
 
 - [x] Authentication
 - [x] Custom User model
@@ -417,7 +417,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Organizations & Recruiters
+## Organizations & Recruiters
 
 - [x] Organization management
 - [x] User ↔ Organization relationship
@@ -427,7 +427,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Candidate Management
+## Candidate Management
 
 - [x] Candidate management
 - [x] Skills management
@@ -441,7 +441,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Locations
+## Locations
 
 - [x] Country management
 - [x] City management
@@ -452,7 +452,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Candidate Search
+## Candidate Search
 
 - [x] Candidate search
 - [x] Search by name
@@ -469,7 +469,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Agency CRM
+## Agency CRM
 
 - [x] Client management
 - [x] Client contacts
@@ -486,7 +486,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Jobs
+## Jobs
 
 - [x] Job management
 - [x] Job status
@@ -505,7 +505,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Recruiter Workflow
+## Recruiter Workflow
 
 - [x] Candidate applications
 - [x] Application uniqueness per candidate / job
@@ -524,34 +524,41 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Client candidate feedback
 - [x] Interview tracking
 - [x] Offer tracking
+- [ ] Offer lifecycle / acceptance flow
 
 ---
 
-### Candidate Import
+## Candidate Import
 
-- [ ] CV Import
-- [ ] Bulk CV Import
-- [ ] GitHub Import
-- [ ] LinkedIn Connector (where permitted by platform policies)
+- [x] CV import architecture
+- [x] Candidate import model
+- [x] CV file upload
+- [ ] CV parsing
+- [ ] Structured candidate data extraction
 - [ ] Candidate deduplication
+- [ ] Bulk CV import
+- [ ] Import processing with Celery
+- [ ] Import status / error tracking
 - [ ] Automatic skill extraction
 - [ ] Candidate profile enrichment
+- [ ] GitHub import
+- [ ] LinkedIn Connector (where permitted by platform policies)
 
 ---
 
-### Candidate Presentation
+## Candidate Presentation
 
-- [ ] Create shortlist
-- [ ] Select candidates for submission
+- [x] Create shortlist
+- [x] Select candidates for submission
+- [x] Client feedback
 - [ ] Generate candidate presentation
 - [ ] Candidate presentation PDF
 - [ ] Send candidate presentation
-- [ ] Client feedback
 - [ ] Candidate approval / rejection
 
 ---
 
-### Client Portal
+## Client Portal
 
 - [ ] Client authentication
 - [ ] Client positions
@@ -564,11 +571,12 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### AI & Intelligence
+## AI & Intelligence
 
 - [ ] AI Skill Extractor
-- [ ] Candidate profile enrichment
-- [ ] Embeddings
+- [ ] AI candidate profile enrichment
+- [ ] Candidate embeddings
+- [ ] Vector database / pgvector
 - [ ] Semantic Candidate Search
 - [ ] Job ↔ Candidate matching
 - [ ] Candidate ranking / scoring
@@ -578,12 +586,13 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Agency Intelligence
+## Agency Intelligence
 
 - [ ] Recruiter performance
 - [ ] Client performance
 - [ ] Placement metrics
 - [ ] Time to shortlist
+- [ ] Time to submission
 - [ ] Time to hire
 - [ ] Conversion rates
 - [ ] Most demanded skills
@@ -592,7 +601,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### LATAM Expansion
+## LATAM Expansion
 
 - [ ] Multi-country support
 - [ ] Multi-currency
@@ -606,7 +615,9 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 
 ---
 
-### Production
+## Production Readiness
+
+### Performance & Reliability
 
 - [ ] Database indexes / query optimization
 - [ ] Caching
@@ -614,13 +625,14 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [ ] Structured logging
 - [ ] Observability
 - [ ] Error tracking
+
+### Deployment & Operations
+
 - [ ] CI/CD
 - [ ] Production deployment
 - [ ] Security hardening
 - [ ] Backup / restore strategy
 - [ ] Database migration strategy
-
----
 
 ## 🧪 Development
 

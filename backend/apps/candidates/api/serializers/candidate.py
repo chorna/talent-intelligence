@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.candidates.models import Candidate, CandidateFavorite, CandidateNote
+from apps.candidates.models import Candidate, CandidateFavorite
 from apps.education.api.serializers import EducationSerializer
 from apps.experiences.api.serializers import ExperienceSerializer
 from apps.locations.models import City
@@ -82,35 +82,3 @@ class CandidateSerializer(serializers.ModelSerializer):
             user=request.user,
             candidate=obj,
         ).exists()
-
-
-class CandidateFavoriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CandidateFavorite
-        fields = [
-            "id",
-            "candidate",
-            "created_at",
-        ]
-        read_only_fields = [
-            "id",
-            "created_at",
-        ]
-
-
-class CandidateNoteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CandidateNote
-        fields = [
-            "id",
-            "candidate",
-            "content",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = [
-            "id",
-            "candidate",
-            "created_at",
-            "updated_at",
-        ]
