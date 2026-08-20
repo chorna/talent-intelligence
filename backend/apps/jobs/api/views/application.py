@@ -9,7 +9,7 @@ from apps.core.pagination import DefaultPagination
 from apps.jobs.choices import ApplicationStatus
 from apps.jobs.models import Application
 
-from ..serializers import (
+from ..serializers.application import (
     ApplicationSerializer,
     ApplicationStatusHistorySerializer,
 )

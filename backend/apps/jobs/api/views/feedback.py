@@ -7,7 +7,7 @@ from apps.jobs.models import (
     ClientCandidateFeedback,
 )
 
-from ..serializers import ClientCandidateFeedbackSerializer
+from ..serializers.feedback import ClientCandidateFeedbackSerializer
 from .base import JobScopedViewSet
 
 

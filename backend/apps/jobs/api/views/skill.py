@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.jobs.models import JobSkill
 
-from ..serializers import JobSkillSerializer
+from ..serializers.skill import JobSkillSerializer
 from .base import JobScopedViewSet
 
 

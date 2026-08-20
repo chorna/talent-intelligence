@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.jobs.models import CandidateShortlist
 
-from ..serializers import CandidateShortlistSerializer
+from ..serializers.shorlist import CandidateShortlistSerializer
 from .base import JobScopedViewSet
 
 

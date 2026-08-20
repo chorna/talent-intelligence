@@ -44,3 +44,18 @@ class SubmissionStatus(models.TextChoices):
 class ClientFeedbackDecision(models.TextChoices):
     INTERESTED = "interested", "Interested"
     NOT_INTERESTED = "not_interested", "Not interested"
+
+
+class InterviewStatus(models.TextChoices):
+    SCHEDULED = "scheduled", "Scheduled"
+    COMPLETED = "completed", "Completed"
+    CANCELLED = "cancelled", "Cancelled"
+    NO_SHOW = "no_show", "No show"
+
+
+class InterviewType(models.TextChoices):
+    HR = "hr", "HR"
+    TECHNICAL = "technical", "Technical"
+    CLIENT = "client", "Client"
+    FINAL = "final", "Final"
+    OTHER = "other", "Other"

@@ -15,7 +15,7 @@ from apps.clients.api.serializers import (
 from apps.clients.models import Client
 from apps.core.pagination import DefaultPagination
 from apps.core.permissions import HasOrganization
-from apps.jobs.api.serializers import JobSerializer
+from apps.jobs.api.serializers.job import JobSerializer
 from apps.jobs.choices import ApplicationStatus, JobStatus
 from apps.jobs.models import Application
 

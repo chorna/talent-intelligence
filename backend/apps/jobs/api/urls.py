@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views.application import ApplicationViewSet
 from .views.feedback import FeedbackViewSet
+from .views.interview import InterviewViewSet
 from .views.job import JobViewSet
 from .views.shortlist import ShortlistViewSet
 from .views.skill import JobSkillViewSet
@@ -67,6 +68,14 @@ feedback_router.register(
     basename="submission-feedback",
 )
 
+interview_router = DefaultRouter()
+
+interview_router.register(
+    "interviews",
+    InterviewViewSet,
+    basename="submission-interview",
+)
+
 
 urlpatterns = [
     path(
@@ -92,5 +101,9 @@ urlpatterns = [
     path(
         "jobs/<uuid:job_id>/submissions/<uuid:submission_id>/",
         include(feedback_router.urls),
+    ),
+    path(
+        "jobs/<uuid:job_id>/submissions/<uuid:submission_id>/",
+        include(interview_router.urls),
     ),
 ]
