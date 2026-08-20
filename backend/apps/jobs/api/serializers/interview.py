@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.jobs.models.interview import Interview
+from apps.jobs.models import Interview
 
 
 class InterviewSerializer(serializers.ModelSerializer):

@@ -524,7 +524,6 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] Client candidate feedback
 - [x] Interview tracking
 - [x] Offer tracking
-- [ ] Placement tracking
 
 ---
 
