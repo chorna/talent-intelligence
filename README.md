@@ -533,7 +533,7 @@ LinkedIn integrations will only be implemented where permitted by applicable pla
 - [x] CV import architecture
 - [x] Candidate import model
 - [x] CV file upload
-- [ ] CV parsing
+- [x] CV parsing
 - [ ] Structured candidate data extraction
 - [ ] Candidate deduplication
 - [ ] Bulk CV import
